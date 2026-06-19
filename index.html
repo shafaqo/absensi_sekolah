@@ -534,9 +534,9 @@
                                         <th class="py-2 px-2">Tanggal</th>
                                         <th class="py-2 px-2">Nama Guru</th>
                                         <th class="py-2 px-2">Waktu (Masuk - Keluar)</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jam Mulai</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jam Selesai</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pelajaran & Kelas</th>
+                                        <th class="py-2 px-2">Jam Mulai</th>
+                                        <th class="py-2 px-2">Jam Selesai</th>
+                                        <th class="py-2 px-2">Pelajaran & Kelas</th>
                                         <th class="py-2 px-2">Status Disiplin</th>
                                         <th class="py-2 px-2">Poin Didapat</th>
                                         <th class="py-2 px-2">Detail Lokasi GPS</th>
@@ -1831,12 +1831,12 @@
                     <td class="py-2.5 px-2 font-mono text-gray-600">${r.date}</td>
                     <td class="py-2.5 px-2 font-bold text-gray-800">${getTeacherName(r.userId)}</td>
                     <td class="py-2.5 px-2 font-medium tracking-tight"><span class="text-green-600">${r.timeIn}</span> - <span class="text-orange-500">${r.timeOut || '--:--'}</span></td>
-                    <td class="py-2.5 px-2">${disiplinHtml}</td>
-                    <td class="py-2.5 px-2 font-black">${r.points || 0}</td>
-                    <td class="py-2.5 px-2">${mapLink}</td>
                     <td class="py-2.5 px-2 text-xs text-gray-700">${jamPertama}</td>
                     <td class="py-2.5 px-2 text-xs text-gray-700">${jamTerakhir}</td>
                     <td class="py-2.5 px-2 text-xs text-gray-700 max-w-[150px] truncate" title="${infoPelajaran}">${infoPelajaran}</td>
+                    <td class="py-2.5 px-2">${disiplinHtml}</td>
+                    <td class="py-2.5 px-2 font-black">${r.points || 0}</td>
+                    <td class="py-2.5 px-2">${mapLink}</td>
                 </tr>`;
             });
             showToast("Sukses merangkum dan mengekstrak Laporan Data Tabel.");

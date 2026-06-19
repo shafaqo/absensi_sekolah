@@ -555,9 +555,16 @@
                         <p class="text-xs text-gray-500 mb-2">Tentukan jam masuk standar dan poin *reward/punishment*
                             kedisiplinan guru.</p>
                         <form id="form-settings-absen" class="space-y-3 mt-4">
-                            <div><label class="text-xs font-medium">Jam Masuk Default (Jika tidak ada jadwal pagi,
-                                    gunakan batas ini)</label><input type="time" id="set-jam-masuk"
-                                    class="w-full border rounded p-2 mt-1 bg-gray-50" required></div>
+                            <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-xs font-bold text-gray-800">Gunakan Jam Masuk Default?</label>
+                                    <input type="checkbox" id="set-use-default-time" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" onchange="toggleDefaultTimeInput()">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 mb-1 block">Jika dimatikan, keterlambatan dihitung HANYA berdasarkan jam mulai jadwal pelajaran pertama guru.</label>
+                                    <input type="time" id="set-jam-masuk" class="w-full border rounded p-2 mt-1 bg-white disabled:bg-gray-200 disabled:text-gray-400" required>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div><label class="text-xs font-medium text-green-600">Poin Hadir Tepat Waktu
                                         (+)</label><input type="number" id="set-pt-on"
@@ -894,7 +901,7 @@
             schedules: [],
             attendance: [],
             izin: [],
-            settings: { lat: '', lng: '', radius: '100', default_time_in: '07:30', point_ontime: '10', point_late: '-5', roster_config: '{"slotDuration":40,"days":{"Senin":{"start":"08:00","end":"14:00"},"Selasa":{"start":"08:00","end":"14:00"},"Rabu":{"start":"08:00","end":"12:00"},"Kamis":{"start":"08:00","end":"14:00"},"Jumat":{"start":"08:00","end":"11:00"},"Sabtu":{"start":"","end":""}},"breaks":[{"start":"10:00","end":"10:30","label":"Istirahat"}]}' }
+            settings: { lat: '', lng: '', radius: '100', default_time_in: '07:30', use_default_time_in: 'true', point_ontime: '10', point_late: '-5', roster_config: '{"slotDuration":40,"days":{"Senin":{"start":"08:00","end":"14:00"},"Selasa":{"start":"08:00","end":"14:00"},"Rabu":{"start":"08:00","end":"12:00"},"Kamis":{"start":"08:00","end":"14:00"},"Jumat":{"start":"08:00","end":"11:00"},"Sabtu":{"start":"","end":""}},"breaks":[{"start":"10:00","end":"10:30","label":"Istirahat"}]}' }
         };
 
         // --- VARIABEL GLOBAL ---
@@ -1184,14 +1191,30 @@
             if (!record) {
                 // LOGIKA PENCATATAN ABSEN MASUK PERTAMA HARI INI
                 let disiplin = 'Tepat Waktu';
-                let batasWaktu = db.settings.default_time_in || '07:30'; // Parameter Standar dari Admin Dasbor
+                const useDefaultTimeIn = db.settings.use_default_time_in !== 'false'; // Default bernilai true
+                const defaultTimeIn = db.settings.default_time_in || '07:30';
 
-                // Jika hari ini guru bersangkutan punya jadwal kelas, batasWaktu berubah sesuai kelas pertama (jika lebih pagi)
+                // Ambil jadwal guru hari ini dan urutkan dari jam paling pagi
                 const myScheds = db.schedules.filter(s => s.teacherId === currentUser.id && s.day === today).sort((a, b) => a.startTime.localeCompare(b.startTime));
-                if (myScheds.length > 0 && myScheds[0].startTime < batasWaktu) batasWaktu = myScheds[0].startTime;
 
-                // Logika Kalkulator Ketepatan
-                if (timeStr > batasWaktu) disiplin = 'Terlambat';
+                if (useDefaultTimeIn) {
+                    // LOGIKA A: Jika Jam Default AKTIF
+                    let batasWaktu = defaultTimeIn;
+                    // Jika punya jadwal yang LEBIH PAGI dari jam default, gunakan jam jadwal tersebut
+                    if (myScheds.length > 0 && myScheds[0].startTime < batasWaktu) {
+                        batasWaktu = myScheds[0].startTime;
+                    }
+                    if (timeStr > batasWaktu) disiplin = 'Terlambat';
+                } else {
+                    // LOGIKA B: Jika Jam Default MATI (Murni berdasarkan jadwal pertama)
+                    if (myScheds.length > 0) {
+                        // Telat jika jam absen melewati jam mulai jadwal kelas pertamanya
+                        if (timeStr > myScheds[0].startTime) disiplin = 'Terlambat';
+                    } else {
+                        // Jika tidak punya jadwal sama sekali hari ini, guru dianggap Tepat Waktu bebas jam berapa saja
+                        disiplin = 'Tepat Waktu'; 
+                    }
+                }
 
                 // Beri hadiah/pemotongan poin ke kantong guru hari itu juga
                 let pt = disiplin === 'Terlambat' ? parseInt(db.settings.point_late || -5) : parseInt(db.settings.point_ontime || 10);
@@ -1276,6 +1299,9 @@
 
             // Prepulate data ke formulir di sub-modul Pengaturan System Aplikasi
             if (tab === 'pengaturan') {
+                const useDefault = db.settings.use_default_time_in !== 'false';
+                document.getElementById('set-use-default-time').checked = useDefault;
+                document.getElementById('set-jam-masuk').disabled = !useDefault;
                 document.getElementById('set-jam-masuk').value = db.settings.default_time_in || '07:30';
                 document.getElementById('set-pt-on').value = db.settings.point_ontime || '10';
                 document.getElementById('set-pt-late').value = db.settings.point_late || '-5';
@@ -1777,10 +1803,16 @@
         function saveSettingsAbsen(e) {
             e.preventDefault();
             // Save ke DB Object
+            db.settings.use_default_time_in = document.getElementById('set-use-default-time').checked ? 'true' : 'false';
             db.settings.default_time_in = document.getElementById('set-jam-masuk').value;
             db.settings.point_ontime = document.getElementById('set-pt-on').value;
             db.settings.point_late = document.getElementById('set-pt-late').value;
             saveDB(); pushToBackend('save_settings', db.settings); showToast("Kebijakan Absen & Poin telah disahkan.");
+        }
+
+        // Menghidupkan atau mematikan input waktu jika checkbox ditekan
+        function toggleDefaultTimeInput() {
+            document.getElementById('set-jam-masuk').disabled = !document.getElementById('set-use-default-time').checked;
         }
 
         // Deteksi Otomatis untuk Kunci Geofence (Admin Tinggal pencet saat di lokasi sekola)

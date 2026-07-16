@@ -38,14 +38,13 @@
         <!-- ================= VIEW: LOGIN ================= -->
         <div id="view-login" class="flex flex-col h-screen p-6 justify-center no-print hidden">
             <div class="text-center mb-10">
-                <img src="yayasan.jpg" class="w-40 h-auto mx-auto object-contain hover:scale-105 transition-transform duration-300">
-                <!-- <i class="ph ph-book-open-text text-5xl mb-2 text-black"></i> -->
+                <img src="yayasan.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RkZCIvPjwvc3ZnPg=='; this.onerror=null;" class="w-40 h-auto mx-auto object-contain hover:scale-105 transition-transform duration-300">
                 <br>
                 <h1 class="text-2xl font-bold tracking-tight">Yayasan Fadli <br>Ar-Ridhwaniyah</h1>
                 <p class="text-gray-500 text-sm mt-1">Portal Absensi & Akademik <br> SD Tafdhil Al Qur'an & TPQ Ar-Ridhwaniyah</p>
             </div>
             <form id="login-form" class="space-y-4">
-                <div><label class="block text-sm font-medium mb-1">Username</label><input type="text" id="login-username" required class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-black"></div>
+                <div><label class="block text-sm font-medium mb-1">Username / Nama Lengkap</label><input type="text" id="login-username" required class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-black"></div>
                 <div><label class="block text-sm font-medium mb-1">Sandi</label><input type="password" id="login-password" required class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-black"></div>
                 <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg p-3 hover:bg-dark transition active:scale-95 shadow-lg">Masuk Dashboard</button>
             </form>
@@ -54,7 +53,7 @@
             </div>
         </div>
 
-        <!-- ================= VIEW: PUBLIC BOARD (FITUR YANG DIPERBAIKI) ================= -->
+        <!-- ================= VIEW: PUBLIC BOARD ================= -->
         <div id="view-public" class="flex flex-col h-screen hidden bg-gray-50">
             <div class="bg-black text-white p-4 sticky top-0 z-10 flex items-center shadow-md">
                 <button onclick="navTo('login')" class="p-2 mr-2 active:scale-90 hover:bg-gray-800 rounded-full"><i class="ph ph-arrow-left text-xl"></i></button>
@@ -65,9 +64,7 @@
                 <button onclick="renderPublicBoard('besok')" id="btn-pub-besok" class="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600">Besok</button>
             </div>
             <div class="p-4 flex-1 overflow-y-auto pb-10">
-                <div id="public-schedule-list" class="space-y-4">
-                    <!-- Data Jadwal Anak-anak akan dirender disini oleh Javascript -->
-                </div>
+                <div id="public-schedule-list" class="space-y-4"></div>
             </div>
         </div>
 
@@ -82,7 +79,6 @@
             </div>
 
             <div class="flex-1 overflow-y-auto p-4 space-y-6">
-                
                 <div class="flex justify-between items-center bg-gray-200 p-2 rounded-lg">
                     <h3 class="font-bold text-gray-700 text-sm flex items-center gap-1"><i class="ph ph-clock"></i> <span id="current-time-guru">00:00</span></h3>
                     <span id="guru-piket-badge" class="hidden bg-orange-500 text-white px-2 py-1 rounded text-[10px] font-bold"><i class="ph ph-shield-check"></i> Petugas Piket Hari Ini</span>
@@ -92,7 +88,6 @@
 
                 <!-- WADAH KARTU ABSENSI DINAMIS -->
                 <div id="attendance-cards-container" class="space-y-4">
-                    
                     <!-- Kartu SD (Pagi) -->
                     <div id="card-absen-sd" class="hidden bg-blue-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
@@ -130,19 +125,6 @@
                             <div class="bg-emerald-900 rounded-xl p-3 border border-emerald-700"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-tahfiz">--:--</p></div>
                         </div>
                         <button onclick="openAbsenModal('Tahfiz')" class="w-full bg-white text-emerald-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai Tahfiz</button>
-                    </div>
-
-                    <!-- Kartu Tendik -->
-                    <div id="card-absen-tendik" class="hidden bg-black text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
-                            <div><h3 class="text-lg font-bold text-gray-200"><i class="ph ph-briefcase"></i> Absensi Dinas</h3><p class="text-[10px] text-gray-400">Tenaga Kependidikan</p></div>
-                            <span id="badge-tendik" class="px-2 py-1 rounded bg-gray-900 text-xs font-medium border border-gray-700 block">-</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
-                            <div class="bg-gray-900 rounded-xl p-3 border border-gray-700"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-tendik">--:--</p></div>
-                            <div class="bg-gray-900 rounded-xl p-3 border border-gray-700"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-tendik">--:--</p></div>
-                        </div>
-                        <button onclick="openAbsenModal('Tendik')" class="w-full bg-white text-black font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai Kehadiran</button>
                     </div>
 
                     <div id="card-no-schedule" class="hidden bg-gray-100 border border-gray-300 rounded-xl p-6 text-center text-gray-500">
@@ -187,7 +169,6 @@
                 
                 <div id="admin-dashboard" class="space-y-4">
                     <button onclick="bukaModalTargetKehadiran()" class="w-full bg-blue-600 text-white p-3 rounded-xl shadow-sm hover:bg-blue-700 font-bold flex items-center justify-center gap-2 mb-2 no-print"><i class="ph ph-users-three text-xl"></i> Lihat Target Kehadiran Hari Ini</button>
-
                     <div class="grid grid-cols-2 gap-3 no-print">
                         <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm text-center"><i class="ph ph-users text-2xl mb-1 text-gray-400"></i><h4 class="text-2xl font-bold text-black" id="stat-total-guru">0</h4><p class="text-xs text-gray-500">Total Karyawan</p></div>
                         <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm text-center border-l-4 border-l-black"><i class="ph ph-check-circle text-2xl mb-1 text-black"></i><h4 class="text-2xl font-bold" id="stat-hadir-hari-ini">0</h4><p class="text-xs text-gray-500">Sesi Hadir (Hari Ini)</p></div>
@@ -315,17 +296,42 @@
                     </div>
 
                     <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-clock text-xl"></i> Parameter Waktu Kehadiran</h3>
-                        <p class="text-[10px] text-gray-500 mb-3">Kosongkan jam jika shift pada hari tersebut libur penuh.</p>
-                        <form id="form-settings-absen" class="space-y-4">
-                            
-                            <div class="flex gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                <div class="flex-1"><label class="text-[10px] font-bold text-orange-900 block mb-1">Toleransi Piket Hadir Awal (Menit)</label><input type="number" id="set-piket-early" class="w-full border border-orange-300 bg-white rounded p-1.5 text-sm" value="15"></div>
-                                <div class="flex-1"><label class="text-[10px] font-bold text-orange-900 block mb-1">Toleransi Piket Pulang Telat (Menit)</label><input type="number" id="set-piket-late" class="w-full border border-orange-300 bg-white rounded p-1.5 text-sm" value="15"></div>
+                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-clock text-xl"></i> Toleransi Keterlambatan Piket</h3>
+                        <div class="flex gap-2 p-3 mt-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="flex-1"><label class="text-[10px] font-bold text-orange-900 block mb-1">Piket Hadir Awal (Menit)</label><input type="number" id="set-piket-early" class="w-full border border-orange-300 bg-white rounded p-1.5 text-sm" value="15"></div>
+                            <div class="flex-1"><label class="text-[10px] font-bold text-orange-900 block mb-1">Piket Pulang Telat (Menit)</label><input type="number" id="set-piket-late" class="w-full border border-orange-300 bg-white rounded p-1.5 text-sm" value="15"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
+                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-lock-key text-xl text-purple-600"></i> Batas Ketat Waktu Absen (Strict Window)</h3>
+                        <p class="text-[10px] text-gray-500 mb-3">Atur jendela batas waktu agar guru/tendik hanya bisa klik absen masuk/pulang di rentang menit tertentu.</p>
+                        
+                        <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg space-y-3">
+                            <label class="flex items-center gap-2 text-sm font-bold text-purple-900 cursor-pointer">
+                                <input type="checkbox" id="set-strict-window" class="w-4 h-4 accent-purple-600" onchange="toggleStrictWindowUI()"> 
+                                Kunci Tombol Absen di Luar Batas Waktu
+                            </label>
+                            <div id="container-strict-window" class="pl-2 space-y-2 mt-2">
+                                <div class="grid grid-cols-2 gap-2 p-2 bg-white rounded border border-purple-100">
+                                    <div class="col-span-2 text-[10px] font-bold text-purple-700 border-b pb-1">Jendela Boleh Absen MASUK</div>
+                                    <div><label class="text-[9px] text-gray-500">Buka (Menit Sblm Jam)</label><input type="number" id="set-window-in-start" class="w-full border rounded p-1.5 text-xs bg-gray-50" value="60"></div>
+                                    <div><label class="text-[9px] text-gray-500">Tutup (Menit Stlh Jam)</label><input type="number" id="set-window-in-end" class="w-full border rounded p-1.5 text-xs bg-gray-50" value="60"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 p-2 bg-white rounded border border-purple-100">
+                                    <div class="col-span-2 text-[10px] font-bold text-purple-700 border-b pb-1">Jendela Boleh Absen PULANG</div>
+                                    <div><label class="text-[9px] text-gray-500">Buka (Menit Sblm Jam)</label><input type="number" id="set-window-out-start" class="w-full border rounded p-1.5 text-xs bg-gray-50" value="0"></div>
+                                    <div><label class="text-[9px] text-gray-500">Tutup (Menit Stlh Jam)</label><input type="number" id="set-window-out-end" class="w-full border rounded p-1.5 text-xs bg-gray-50" value="120"></div>
+                                </div>
                             </div>
-                            
-                            <div id="daily-times-container" class="space-y-3"></div>
-                            <button type="submit" class="w-full bg-black text-white p-3 rounded-lg text-sm font-medium mt-4 shadow">Simpan Konfigurasi</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
+                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-calendar text-xl"></i> Master Jam Shift Harian</h3>
+                        <form id="form-settings-absen" class="space-y-4">
+                            <div id="daily-times-container" class="space-y-3 mt-3"></div>
+                            <button type="submit" class="w-full bg-black text-white p-3 rounded-lg text-sm font-medium mt-4 shadow hover:bg-gray-800">Simpan Parameter Waktu</button>
                         </form>
                     </div>
 
@@ -346,14 +352,17 @@
         </div>
 
         <!-- ================= MODALS ================= -->
-        
         <div id="modal-absen" class="fixed inset-0 bg-black bg-opacity-95 z-50 hidden flex-col items-center justify-center p-4">
             <div class="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
                 <div class="bg-black text-white p-4 flex justify-between items-center"><h3 class="font-bold">Verifikasi Identitas <span id="lbl-absen-shift"></span></h3><button onclick="closeModal('modal-absen')" class="text-gray-300"><i class="ph ph-x text-xl"></i></button></div>
                 <div class="relative bg-black w-full aspect-[3/4] flex items-center justify-center overflow-hidden">
                     <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
                     <div class="scan-overlay"></div> 
-                    <div id="geo-status-container" class="absolute bottom-4 bg-black bg-opacity-80 text-white text-xs px-3 py-2 rounded-lg flex flex-col items-center max-w-[80%] text-center border border-gray-700"><span id="geo-status"><i class="ph ph-spinner-gap animate-spin"></i> Cek GPS...</span><span id="geo-distance" class="text-[10px] text-gray-400 mt-1 hidden"></span></div>
+                    <div id="geo-status-container" class="absolute bottom-4 bg-black bg-opacity-80 text-white text-xs px-3 py-2 rounded-lg flex flex-col items-center max-w-[80%] text-center border border-gray-700">
+                        <span id="geo-status"><i class="ph ph-spinner-gap animate-spin"></i> Cek GPS...</span>
+                        <span id="geo-distance" class="text-[10px] text-gray-400 mt-1 hidden"></span>
+                        <span id="geo-accuracy" class="text-[9px] text-gray-500 mt-0.5 hidden"></span>
+                    </div>
                 </div>
                 <div class="p-5 text-center"><button id="btn-capture-absen" onclick="processAbsen()" disabled class="w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2"><i class="ph ph-scan text-xl"></i> Pindai Lokasi</button></div>
             </div>
@@ -366,7 +375,6 @@
                     <button onclick="closeModal('modal-target-hadir')" class="p-1 hover:bg-gray-100 rounded text-gray-500"><i class="ph ph-x"></i></button>
                 </div>
                 <p class="text-[10px] text-gray-500 mb-4 bg-blue-50 p-2 rounded border border-blue-200">Sistem mengalkulasi nama-nama di bawah berdasarkan Roster Kelas hari ini, Jadwal Piket, dan Aturan Wajib Absen di menu pengaturan.</p>
-                
                 <div id="list-target-hadir" class="space-y-4"></div>
             </div>
         </div>
@@ -376,22 +384,25 @@
                 <h3 class="font-bold text-lg mb-4 border-b pb-2">Profil Karyawan</h3>
                 <form id="form-user" class="space-y-3">
                     <input type="hidden" id="user-id">
-                    <div><label class="text-xs font-medium">Jabatan</label><select id="user-role" class="w-full border rounded p-2 mt-1" onchange="toggleUserRoleFields()"><option value="guru">Guru Pendidik</option><option value="tendik">Staff Tendik</option></select></div>
-                    <div><label class="text-xs font-medium">Nama</label><input type="text" id="user-nama" required class="w-full border rounded p-2 mt-1"></div>
+                    <div><label class="text-xs font-medium">Kategori Role</label><select id="user-role" class="w-full border rounded p-2 mt-1 bg-gray-50" onchange="toggleUserRoleFields()"><option value="guru">Guru Pendidik</option><option value="tendik">Staff Tendik</option></select></div>
+                    
+                    <div id="user-jabatan-area" class="hidden"><label class="text-xs font-medium text-orange-600">Jabatan Tendik (Manual)</label><input type="text" id="user-jabatan" placeholder="Cth: Operator, Satpam, TU..." class="w-full border border-orange-200 rounded p-2 mt-1"></div>
+                    
+                    <div><label class="text-xs font-medium">Nama Lengkap</label><input type="text" id="user-nama" required class="w-full border rounded p-2 mt-1"></div>
                     <div><label class="text-xs font-medium">Username</label><input type="text" id="user-uname" required class="w-full border rounded p-2 mt-1"></div>
                     <div><label class="text-xs font-medium">Password</label><input type="text" id="user-pass" class="w-full border rounded p-2 mt-1" placeholder="(Kosongkan jika tak diubah)"></div>
                     
                     <div id="user-unit-area" class="pt-2 border-t mt-2">
-                        <label class="text-[10px] font-bold text-blue-600 block mb-2">Penugasan Unit (Bisa Pilih > 1)</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-1 text-xs font-medium"><input type="checkbox" value="SD" class="user-cb-unit"> SD (Pagi)</label>
-                            <label class="flex items-center gap-1 text-xs font-medium"><input type="checkbox" value="TPQ" class="user-cb-unit"> TPQ (Sore)</label>
+                        <label class="text-[10px] font-bold text-blue-600 block mb-2">Penugasan Shift Unit (Bisa Pilih > 1)</label>
+                        <div class="flex gap-4 bg-blue-50 p-2 rounded">
+                            <label class="flex items-center gap-1 text-xs font-medium"><input type="checkbox" value="SD" class="user-cb-unit"> SD</label>
+                            <label class="flex items-center gap-1 text-xs font-medium"><input type="checkbox" value="TPQ" class="user-cb-unit"> TPQ</label>
                             <label class="flex items-center gap-1 text-xs font-medium"><input type="checkbox" value="Tahfiz" class="user-cb-unit"> Tahfiz</label>
                         </div>
                     </div>
 
                     <div id="user-subjects-area" class="pt-2 border-t mt-2">
-                        <label class="text-[10px] font-bold block mb-2">Kompetensi Mengajar</label>
+                        <label class="text-[10px] font-bold block mb-2">Kompetensi Mengajar (Khusus Guru)</label>
                         <div class="flex items-center mb-2"><input type="checkbox" id="user-sub-all" value="ALL" class="mr-2" onchange="toggleAllSubjects(this)"><label class="text-xs font-bold text-blue-600" for="user-sub-all">Guru Kelas Utama (Semua)</label></div>
                         <div id="user-subjects-container" class="grid grid-cols-2 gap-2 text-xs border p-2 rounded max-h-32 overflow-y-auto"></div>
                     </div>
@@ -461,7 +472,12 @@
 
         let db = {
             users: [], classes: [], subjects: [], schedules: [], pickets: [], attendance: [], izin: [],
-            settings: { lat: '', lng: '', radius: '100', daily_times: '{}', piket_early: '15', piket_late: '15', roster_config: '{}', wajib_absen_kosong: 'false', mode_absen_kosong: 'shift' }
+            settings: { 
+                lat: '', lng: '', radius: '100', daily_times: '{}', 
+                piket_early: '15', piket_late: '15', roster_config: '{}', 
+                wajib_absen_kosong: 'false', mode_absen_kosong: 'shift',
+                strict_absen_window: 'false', window_in_start: '60', window_in_end: '60', window_out_start: '0', window_out_end: '120'
+            }
         };
 
         let currentUser = null, videoStream = null, tempLocation = null, currentTargetShift = 'SD', knownPendingIzinIds = [];
@@ -471,7 +487,6 @@
             const stored = localStorage.getItem(DB_KEY);
             if (stored) db = { ...db, ...JSON.parse(stored) }; 
             
-            // Re-apply toggle UI event listeners just in case
             document.getElementById('set-wajib-absen').addEventListener('change', function() {
                document.getElementById('container-mode-absen').style.opacity = this.checked ? '1' : '0.5';
                document.getElementById('set-mode-absen').disabled = !this.checked;
@@ -523,10 +538,12 @@
                     }
 
                     db = { ...db, ...json.data };
+                    // Set defaults fallback if keys missing
                     if(!db.settings.daily_times) db.settings.daily_times = "{}";
                     if(!db.settings.roster_config) db.settings.roster_config = "{}";
                     if(!db.settings.wajib_absen_kosong) db.settings.wajib_absen_kosong = 'false';
                     if(!db.settings.mode_absen_kosong) db.settings.mode_absen_kosong = 'shift';
+                    if(!db.settings.strict_absen_window) db.settings.strict_absen_window = 'false';
                     
                     saveDB(); if(!isSilent && currentUser) routeUser(); 
                 }
@@ -546,62 +563,30 @@
         function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.remove('opacity-0', '-translate-y-4'), 10); setTimeout(() => { t.classList.add('opacity-0', '-translate-y-4'); setTimeout(() => t.classList.add('hidden'), 300); }, 4000); }
         function navTo(v) { ['view-login', 'view-public', 'view-guru', 'view-admin'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById(`view-${v}`).classList.remove('hidden'); if (v === 'public') renderPublicBoard('hari_ini'); }
 
-        // ================= FITUR PAPAN PUBLIK YANG HILANG (MEMPERBAIKI) =================
         function renderPublicBoard(filter) {
-            // Ubah tampilan tombol UI 'Hari Ini' vs 'Besok'
             document.getElementById('btn-pub-hari_ini').className = filter === 'hari_ini' ? "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active" : "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600";
             document.getElementById('btn-pub-besok').className = filter === 'besok' ? "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active" : "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600";
 
-            const listEl = document.getElementById('public-schedule-list');
-            listEl.innerHTML = '';
-
-            // Menentukan hitungan kalender (Hari ini atau Besok)
-            let targetDate = new Date();
-            if (filter === 'besok') targetDate.setDate(targetDate.getDate() + 1);
+            const listEl = document.getElementById('public-schedule-list'); listEl.innerHTML = '';
+            let targetDate = new Date(); if (filter === 'besok') targetDate.setDate(targetDate.getDate() + 1);
             const hariTarget = HARI_ARRAY[targetDate.getDay()];
-            
-            // Mencetak teks tanggal dan hari di Header Hitam
             document.getElementById('public-date-display').innerText = targetDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-            // Tarik Semua Jadwal dari Database yang harinya cocok dengan target pencarian
             const dayScheds = db.schedules.filter(s => s.day === hariTarget);
+            if (dayScheds.length === 0) { listEl.innerHTML = '<div class="text-center py-10 mt-10"><i class="ph ph-calendar-check text-5xl text-gray-300 mb-2"></i><p class="text-gray-500 font-medium text-sm">Sekolah Libur.<br>Tidak ada kegiatan belajar mengajar.</p></div>'; return; }
 
-            if (dayScheds.length === 0) {
-                listEl.innerHTML = '<div class="text-center py-10 mt-10"><i class="ph ph-calendar-check text-5xl text-gray-300 mb-2"></i><p class="text-gray-500 font-medium text-sm">Sekolah Libur.<br>Tidak ada kegiatan belajar mengajar.</p></div>';
-                return;
-            }
+            const grouped = {}; dayScheds.forEach(s => { if (!grouped[s.classId]) grouped[s.classId] = []; grouped[s.classId].push(s); });
 
-            // Kelompokkan Roster yang berserakan menjadi rapi berdasarkan ID Kelas nya masing-masing
-            const grouped = {};
-            dayScheds.forEach(s => {
-                if (!grouped[s.classId]) grouped[s.classId] = [];
-                grouped[s.classId].push(s);
-            });
-
-            // Mulai menggambar HTML untuk setiap Kelas yang ada jadwalnya
             for (const classId in grouped) {
-                const kelasInfo = db.classes.find(c => c.id === classId);
-                if(!kelasInfo) continue; // Antisipasi jika ada jadwal nyasar tapi kelasnya sudah dihapus admin
-                
-                // Menentukan Warna UI Card berdasarkan Unit Sekolah (SD, TPQ, Tahfiz)
+                const kelasInfo = db.classes.find(c => c.id === classId); if(!kelasInfo) continue; 
                 let bgHeader = 'bg-blue-50', borderHeader = 'border-blue-100', textHeader = 'text-blue-900', bgBadge = 'bg-blue-200', textBadge = 'text-blue-800';
                 if (kelasInfo.shift === 'TPQ') { bgHeader='bg-orange-50'; borderHeader='border-orange-100'; textHeader='text-orange-900'; bgBadge='bg-orange-200'; textBadge='text-orange-800'; }
                 else if (kelasInfo.shift === 'Tahfiz') { bgHeader='bg-emerald-50'; borderHeader='border-emerald-100'; textHeader='text-emerald-900'; bgBadge='bg-emerald-200'; textBadge='text-emerald-800'; }
 
-                let html = `
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden">
-                    <div class="${bgHeader} border-b ${borderHeader} px-4 py-2 flex justify-between items-center">
-                        <h3 class="font-bold ${textHeader}">${kelasInfo.name}</h3>
-                        <span class="text-[10px] font-bold ${bgBadge} ${textBadge} px-2 py-0.5 rounded-full uppercase tracking-wider">${kelasInfo.shift || 'SD'}</span>
-                    </div>
-                    <div class="divide-y divide-gray-100 p-2">
-                `;
-
-                // Urutkan jadwal yang ada di dalam kelas ini dari Jam ter-Pagi ke Jam ter-Sore
+                let html = `<div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden"><div class="${bgHeader} border-b ${borderHeader} px-4 py-2 flex justify-between items-center"><h3 class="font-bold ${textHeader}">${kelasInfo.name}</h3><span class="text-[10px] font-bold ${bgBadge} ${textBadge} px-2 py-0.5 rounded-full uppercase tracking-wider">${kelasInfo.shift || 'SD'}</span></div><div class="divide-y divide-gray-100 p-2">`;
                 let scheds = grouped[classId].sort((a, b) => a.startTime.localeCompare(b.startTime));
                 
                 scheds.forEach(s => {
-                    // Cari informasi Guru Inval Jika Ada (Agar di Papan Publik juga tertulis Inval)
                     const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
                     const izinTerkait = db.izin.find(i => {
                         if (i.userId !== s.teacherId || i.status !== 'Disetujui' || !i.substituteId) return false;
@@ -610,28 +595,13 @@
                     });
                     
                     let namaGuruHTML = `<i class="ph ph-chalkboard-teacher"></i> ${getTeacherName(s.teacherId)}`;
-                    if(izinTerkait) {
-                        // Jika guru aslinya izin, ganti nama yang tampil dengan Guru Inval
-                        namaGuruHTML = `<i class="ph ph-arrows-merge text-yellow-600"></i> <span class="text-yellow-700 font-bold bg-yellow-50 px-1 rounded">Inval: ${getTeacherName(izinTerkait.substituteId)}</span>`;
-                    }
+                    if(izinTerkait) namaGuruHTML = `<i class="ph ph-arrows-merge text-yellow-600"></i> <span class="text-yellow-700 font-bold bg-yellow-50 px-1 rounded">Inval: ${getTeacherName(izinTerkait.substituteId)}</span>`;
 
-                    html += `
-                    <div class="flex items-center p-2 gap-3 hover:bg-gray-50 transition rounded">
-                        <div class="bg-gray-100 border border-gray-200 text-gray-800 text-[10px] font-bold font-mono px-2 py-1.5 rounded text-center min-w-[90px] shadow-inner">
-                            ${s.startTime} - ${s.endTime}
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-bold text-gray-900">${getSubjectName(s.subjectId)}</p>
-                            <p class="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">${namaGuruHTML}</p>
-                        </div>
-                    </div>`;
+                    html += `<div class="flex items-center p-2 gap-3 hover:bg-gray-50 transition rounded"><div class="bg-gray-100 border border-gray-200 text-gray-800 text-[10px] font-bold font-mono px-2 py-1.5 rounded text-center min-w-[90px] shadow-inner">${s.startTime} - ${s.endTime}</div><div class="flex-1"><p class="text-sm font-bold text-gray-900">${getSubjectName(s.subjectId)}</p><p class="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">${namaGuruHTML}</p></div></div>`;
                 });
-
-                html += `</div></div>`;
-                listEl.innerHTML += html;
+                html += `</div></div>`; listEl.innerHTML += html;
             }
         }
-        // ==============================================================================
 
         function routeUser() { 
             if (!currentUser) return navTo('login'); 
@@ -652,16 +622,21 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); if (id === 'modal-absen') stopCamera(); try { document.getElementById(id.replace('modal-', 'form-')).reset(); } catch (e) { } }
 
         function handleLogin(e) {
-            e.preventDefault(); const u = document.getElementById('login-username').value.trim(), p = document.getElementById('login-password').value.trim();
-            const user = db.users.find(x => String(x.username) === u && String(x.password) === p);
-            if (user) { currentUser = user; localStorage.setItem('tafdhil_session', JSON.stringify(user)); document.getElementById('login-form').reset(); showToast(`Membuka akses...`); routeUser(); } else showToast("Sistem menolak: Username/sandi keliru!");
+            e.preventDefault(); const u = document.getElementById('login-username').value.trim().toLowerCase(), p = document.getElementById('login-password').value.trim();
+            // Perbaikan Login: Cocokkan ID, Username, atau Nama Lengkap
+            const user = db.users.find(x => 
+                (String(x.username).toLowerCase() === u || String(x.name).toLowerCase() === u || String(x.id).toLowerCase() === u) && 
+                String(x.password) === p
+            );
+            
+            if (user) { currentUser = user; localStorage.setItem('tafdhil_session', JSON.stringify(user)); document.getElementById('login-form').reset(); showToast(`Membuka akses...`); routeUser(); } else showToast("Sistem menolak: Username/Nama/Sandi keliru!");
         }
         function logout() { currentUser = null; localStorage.removeItem('tafdhil_session'); navTo('login'); }
 
         function renderUserDashboard() {
             document.getElementById('guru-name').innerText = currentUser.name;
             const role = currentUser.role;
-            document.getElementById('user-greeting').innerText = role === 'tendik' ? "Portal Tendik (Staff)," : "Portal Pendidik,";
+            document.getElementById('user-greeting').innerText = role === 'tendik' ? `Portal Tendik - ${currentUser.jabatan || 'Staff'},` : "Portal Pendidik,";
             
             const today = getTodayName(), dateStr = getTodayDateStr();
             const izinAktifHariIni = db.izin.find(i => {
@@ -681,76 +656,65 @@
             const cSD = document.getElementById('card-absen-sd');
             const cTPQ = document.getElementById('card-absen-tpq');
             const cTahfiz = document.getElementById('card-absen-tahfiz');
-            const cTendik = document.getElementById('card-absen-tendik');
             const cNo = document.getElementById('card-no-schedule');
             const badgePiket = document.getElementById('guru-piket-badge');
 
             // Reset UI
-            [rosterEl, cSD, cTPQ, cTahfiz, cTendik, cNo, badgePiket].forEach(el => el.classList.add('hidden'));
+            [rosterEl, cSD, cTPQ, cTahfiz, cNo, badgePiket].forEach(el => el.classList.add('hidden'));
 
             const records = db.attendance.filter(a => a.userId === currentUser.id && a.date === dateStr);
+            let hasSD = false, hasTPQ = false, hasTahfiz = false;
+            const myUnits = currentUser.unit ? currentUser.unit.split(',') : [];
 
             if (role === 'tendik') {
-                cTendik.classList.remove('hidden');
-                const rTendik = records.find(r => r.shift === 'Tendik');
-                document.getElementById('in-tendik').innerText = rTendik ? rTendik.timeIn : '--:--';
-                document.getElementById('out-tendik').innerText = (rTendik && rTendik.timeOut) ? rTendik.timeOut : '--:--';
-                const b = document.getElementById('badge-tendik');
-                if(!rTendik) { b.innerText="BELUM TAP"; b.className="px-2 py-1 rounded bg-gray-900 text-xs text-gray-200 block"; }
-                else if(rTendik.disiplin==='Terlambat') { b.innerText="TERLAMBAT"; b.className="px-2 py-1 rounded bg-red-600 text-xs text-white block font-bold"; }
-                else { b.innerText="TEPAT WAKTU"; b.className="px-2 py-1 rounded bg-green-500 text-xs text-black font-bold block"; }
-                return; 
-            }
+                // Tendik mengikuti unit tugas
+                if (myUnits.includes('SD')) hasSD = true;
+                if (myUnits.includes('TPQ')) hasTPQ = true;
+                if (myUnits.includes('Tahfiz')) hasTahfiz = true;
+            } else {
+                // Guru Logic
+                rosterEl.classList.remove('hidden'); 
+                const fullListEl = document.getElementById('guru-full-schedule'); fullListEl.innerHTML = '';
 
-            // GURU LOGIC
-            rosterEl.classList.remove('hidden'); 
-            const fullListEl = document.getElementById('guru-full-schedule'); fullListEl.innerHTML = '';
-            let hasSD = false, hasTPQ = false, hasTahfiz = false;
-
-            HARI_ARRAY.slice(1).concat(HARI_ARRAY[0]).forEach(hari => {
-                let dayScheds = db.schedules.filter(s => s.teacherId === currentUser.id && s.day === hari).map(s => ({ ...s, inval: false }));
-                if (hari === today) {
-                    const invalForMe = db.izin.filter(i => {
-                        if (i.substituteId !== currentUser.id || i.status !== 'Disetujui') return false;
-                        if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
-                        return (i.startDate === dateStr);
-                    });
-                    invalForMe.forEach(iz => {
-                        const izScheds = db.schedules.filter(s => s.teacherId === iz.userId && s.day === hari).map(s => ({ ...s, inval: true, originalOwner: iz.userId }));
-                        dayScheds = dayScheds.concat(izScheds);
-                    });
-                }
-                
-                dayScheds.sort((a, b) => a.startTime.localeCompare(b.startTime));
-                dayScheds.forEach(s => {
-                    const c = db.classes.find(x => x.id === s.classId); const unitSft = c ? (c.shift||'SD') : 'SD';
-                    if (hari === today) { if(unitSft==='SD') hasSD=true; else if(unitSft==='TPQ') hasTPQ=true; else hasTahfiz=true; }
-                    
-                    const badge = s.inval ? `<span class="bg-yellow-100 text-yellow-700 text-[9px] px-1 rounded"><i class="ph ph-arrows-merge"></i> Inval</span>` : '';
-                    fullListEl.innerHTML += `<div class="bg-white border p-3 rounded-lg flex justify-between items-center mb-2 shadow-sm"><div><p class="font-bold text-[9px] text-gray-500 uppercase tracking-widest">${hari} - ${unitSft}</p><p class="font-bold text-sm text-black leading-tight">${getSubjectName(s.subjectId)} ${badge}</p><p class="text-[10px] text-gray-500 mt-1"><i class="ph ph-chalkboard"></i> ${getClassName(s.classId)}</p></div><div class="text-xs font-mono font-bold bg-gray-50 border px-2 py-1 rounded text-gray-700">${s.startTime} - ${s.endTime}</div></div>`;
-                });
-            });
-
-            const myPickets = db.pickets.filter(p => p.userId === currentUser.id && p.day === today);
-            myPickets.forEach(p => { if(p.shift === 'SD') hasSD = true; if(p.shift === 'TPQ') hasTPQ = true; if(p.shift === 'Tahfiz') hasTahfiz = true; });
-            if (myPickets.length > 0) badgePiket.classList.remove('hidden');
-
-            // NEW LOGIC: PENGECEKAN ATURAN WAJIB ABSEN BAGI YANG KOSONG JADWAL
-            if (!hasSD && !hasTPQ && !hasTahfiz) {
-                const isWajibAbsen = db.settings.wajib_absen_kosong === 'true';
-                if (isWajibAbsen) {
-                    const mode = db.settings.mode_absen_kosong; 
-                    if (mode === 'pagi') {
-                        hasSD = true; // Dipaksa apel pagi SD 
-                    } else {
-                        // Sesuai Unit Penugasan Guru Tersebut
-                        const myUnits = currentUser.unit ? currentUser.unit.split(',') : [];
-                        if (myUnits.includes('SD')) hasSD = true;
-                        if (myUnits.includes('TPQ')) hasTPQ = true;
-                        if (myUnits.includes('Tahfiz')) hasTahfiz = true;
+                HARI_ARRAY.slice(1).concat(HARI_ARRAY[0]).forEach(hari => {
+                    let dayScheds = db.schedules.filter(s => s.teacherId === currentUser.id && s.day === hari).map(s => ({ ...s, inval: false }));
+                    if (hari === today) {
+                        const invalForMe = db.izin.filter(i => {
+                            if (i.substituteId !== currentUser.id || i.status !== 'Disetujui') return false;
+                            if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
+                            return (i.startDate === dateStr);
+                        });
+                        invalForMe.forEach(iz => {
+                            const izScheds = db.schedules.filter(s => s.teacherId === iz.userId && s.day === hari).map(s => ({ ...s, inval: true, originalOwner: iz.userId }));
+                            dayScheds = dayScheds.concat(izScheds);
+                        });
                     }
-                } else {
-                    cNo.classList.remove('hidden'); 
+                    
+                    dayScheds.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                    dayScheds.forEach(s => {
+                        const c = db.classes.find(x => x.id === s.classId); const unitSft = c ? (c.shift||'SD') : 'SD';
+                        if (hari === today) { if(unitSft==='SD') hasSD=true; else if(unitSft==='TPQ') hasTPQ=true; else hasTahfiz=true; }
+                        
+                        const badge = s.inval ? `<span class="bg-yellow-100 text-yellow-700 text-[9px] px-1 rounded"><i class="ph ph-arrows-merge"></i> Inval</span>` : '';
+                        fullListEl.innerHTML += `<div class="bg-white border p-3 rounded-lg flex justify-between items-center mb-2 shadow-sm"><div><p class="font-bold text-[9px] text-gray-500 uppercase tracking-widest">${hari} - ${unitSft}</p><p class="font-bold text-sm text-black leading-tight">${getSubjectName(s.subjectId)} ${badge}</p><p class="text-[10px] text-gray-500 mt-1"><i class="ph ph-chalkboard"></i> ${getClassName(s.classId)}</p></div><div class="text-xs font-mono font-bold bg-gray-50 border px-2 py-1 rounded text-gray-700">${s.startTime} - ${s.endTime}</div></div>`;
+                    });
+                });
+
+                const myPickets = db.pickets.filter(p => p.userId === currentUser.id && p.day === today);
+                myPickets.forEach(p => { if(p.shift === 'SD') hasSD = true; if(p.shift === 'TPQ') hasTPQ = true; if(p.shift === 'Tahfiz') hasTahfiz = true; });
+                if (myPickets.length > 0) badgePiket.classList.remove('hidden');
+
+                if (!hasSD && !hasTPQ && !hasTahfiz) {
+                    const isWajibAbsen = db.settings.wajib_absen_kosong === 'true';
+                    if (isWajibAbsen) {
+                        const mode = db.settings.mode_absen_kosong; 
+                        if (mode === 'pagi') { hasSD = true; } 
+                        else {
+                            if (myUnits.includes('SD')) hasSD = true;
+                            if (myUnits.includes('TPQ')) hasTPQ = true;
+                            if (myUnits.includes('Tahfiz')) hasTahfiz = true;
+                        }
+                    } else { cNo.classList.remove('hidden'); }
                 }
             }
 
@@ -768,6 +732,7 @@
             if (hasSD) setupCard('SD', cSD, 'in-sd', 'out-sd', 'badge-sd', {empty: 'bg-blue-950 text-blue-200 border border-blue-800'});
             if (hasTPQ) setupCard('TPQ', cTPQ, 'in-tpq', 'out-tpq', 'badge-tpq', {empty: 'bg-orange-900 text-orange-200 border border-orange-700'});
             if (hasTahfiz) setupCard('Tahfiz', cTahfiz, 'in-tahfiz', 'out-tahfiz', 'badge-tahfiz', {empty: 'bg-emerald-900 text-emerald-200 border border-emerald-700'});
+            if (role === 'tendik' && !hasSD && !hasTPQ && !hasTahfiz) cNo.classList.remove('hidden');
         }
 
         async function openAbsenModal(shift) {
@@ -775,23 +740,30 @@
             document.getElementById('lbl-absen-shift').innerText = `(${shift})`;
             showModal('modal-absen'); tempLocation = null;
 
-            const btn = document.getElementById('btn-capture-absen'), geoStatus = document.getElementById('geo-status'), geoDist = document.getElementById('geo-distance');
+            const btn = document.getElementById('btn-capture-absen'), geoStatus = document.getElementById('geo-status'), geoDist = document.getElementById('geo-distance'), geoAcc = document.getElementById('geo-accuracy');
             btn.disabled = true; btn.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all cursor-not-allowed";
-            geoStatus.innerHTML = `<i class="ph ph-spinner-gap animate-spin"></i> Cek GPS...`; geoDist.classList.add('hidden');
+            geoStatus.innerHTML = `<i class="ph ph-spinner-gap animate-spin"></i> Cek GPS...`; geoDist.classList.add('hidden'); geoAcc.classList.add('hidden');
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         tempLocation = `${pos.coords.latitude},${pos.coords.longitude}`;
                         if (db.settings.lat && db.settings.lng) {
-                            const d = calcDistance(pos.coords.latitude, pos.coords.longitude, db.settings.lat, db.settings.lng);
-                            geoDist.innerText = `Jarak: ${d}m (Toleransi: ${db.settings.radius}m)`; geoDist.classList.remove('hidden');
-                            if (d <= parseInt(db.settings.radius)) { geoStatus.innerHTML = `<i class="ph ph-check-circle text-green-400"></i> Sah`; enableScanButton(); } 
+                            // Perbaikan Akurasi GPS - memaksa parse float agar komparasi akurat
+                            const dbLat = parseFloat(db.settings.lat);
+                            const dbLng = parseFloat(db.settings.lng);
+                            const d = calcDistance(pos.coords.latitude, pos.coords.longitude, dbLat, dbLng);
+                            const r = parseInt(db.settings.radius);
+                            
+                            geoDist.innerText = `Jarak: ${d}m (Toleransi: ${r}m)`; geoDist.classList.remove('hidden');
+                            geoAcc.innerText = `Akurasi Sinyal: ${Math.floor(pos.coords.accuracy)}m`; geoAcc.classList.remove('hidden');
+                            
+                            if (d <= r) { geoStatus.innerHTML = `<i class="ph ph-check-circle text-green-400"></i> Sah`; enableScanButton(); } 
                             else geoStatus.innerHTML = `<i class="ph ph-warning-octagon text-red-500"></i> Di luar area sekolah!`;
                         } else { geoStatus.innerHTML = `<i class="ph ph-map-pin text-green-400"></i> Mode GPS Bebas`; enableScanButton(); }
                     },
                     (err) => { geoStatus.innerHTML = `<i class="ph ph-warning-circle text-red-400"></i> Izin GPS Ditolak!`; showToast("Akses lokasi diblokir browser."); },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
             }
             try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); document.getElementById('camera-feed').srcObject = videoStream; } 
@@ -811,35 +783,57 @@
             let dailySettings = {}; try { dailySettings = JSON.parse(db.settings.daily_times)[today] || {}; } catch(e){}
             const isPiket = currentUser.role === 'guru' && (db.pickets.find(p => p.userId === currentUser.id && p.day === today && p.shift === currentTargetShift) != null);
             const pEarly = parseInt(db.settings.piket_early || 15), pLate = parseInt(db.settings.piket_late || 15);
+            const isStrictWindow = db.settings.strict_absen_window === 'true';
+
+            let batasMasukStr = '', batasKeluarStr = '';
+            if (currentTargetShift === 'SD') { batasMasukStr = dailySettings.sdIn; batasKeluarStr = dailySettings.sdOut; }
+            else if (currentTargetShift === 'TPQ') { batasMasukStr = dailySettings.tpqIn; batasKeluarStr = dailySettings.tpqOut; }
+            else if (currentTargetShift === 'Tahfiz') { batasMasukStr = dailySettings.tahfizIn; batasKeluarStr = dailySettings.tahfizOut; }
 
             if (!record) {
-                let disiplin = 'Tepat Waktu', batasMasukStr = '';
-                if (currentTargetShift === 'SD') batasMasukStr = dailySettings.sdIn;
-                else if (currentTargetShift === 'TPQ') batasMasukStr = dailySettings.tpqIn;
-                else if (currentTargetShift === 'Tahfiz') batasMasukStr = dailySettings.tahfizIn;
-                else if (currentTargetShift === 'Tendik') batasMasukStr = dailySettings.tendikIn;
-                
+                // LOGIKA ABSEN MASUK
+                let disiplin = 'Tepat Waktu';
                 if (batasMasukStr) {
                     let batasMins = timeToMins(batasMasukStr);
-                    if (isPiket) batasMins -= pEarly; 
-                    if (timeToMins(timeStr) > batasMins) disiplin = 'Terlambat';
+                    let targetMasukToleransi = isPiket ? batasMins - pEarly : batasMins;
+                    
+                    // PENGECEKAN STRICT WINDOW (Batas Ketat)
+                    if (isStrictWindow) {
+                        let wStart = targetMasukToleransi - parseInt(db.settings.window_in_start || 60);
+                        let wEnd = targetMasukToleransi + parseInt(db.settings.window_in_end || 60);
+                        let currentMins = timeToMins(timeStr);
+                        if (currentMins < wStart || currentMins > wEnd) {
+                            alert(`DITOLAK: Jendela Waktu Absen Masuk ${currentTargetShift} HANYA DIBUKA antara pukul ${minsToTime(wStart)} s/d ${minsToTime(wEnd)}.`);
+                            closeModal('modal-absen'); return;
+                        }
+                    }
+
+                    if (timeToMins(timeStr) > targetMasukToleransi) disiplin = 'Terlambat';
                 }
 
                 record = { id: 'abs_' + Date.now(), userId: currentUser.id, date: dateStr, shift: currentTargetShift, timeIn: timeStr, timeOut: "", location: tempLocation, status: "Masuk", disiplin: disiplin };
                 db.attendance.push(record);
                 showToast(`Absen Masuk ${currentTargetShift} terekam.`);
             } else if (!record.timeOut) {
-                let batasKeluarStr = '';
-                if (currentTargetShift === 'SD') batasKeluarStr = dailySettings.sdOut;
-                else if (currentTargetShift === 'TPQ') batasKeluarStr = dailySettings.tpqOut;
-                else if (currentTargetShift === 'Tahfiz') batasKeluarStr = dailySettings.tahfizOut;
-                else if (currentTargetShift === 'Tendik') batasKeluarStr = dailySettings.tendikOut;
-                
+                // LOGIKA ABSEN PULANG
                 if (batasKeluarStr) {
                     let minKeluarMins = timeToMins(batasKeluarStr);
-                    if (isPiket) minKeluarMins += pLate; 
-                    if (timeToMins(timeStr) < minKeluarMins) {
-                        alert(`Ditolak: Anda belum diizinkan pulang sebelum pukul ${minsToTime(minKeluarMins)}.`); closeModal('modal-absen'); return;
+                    let targetPulangToleransi = isPiket ? minKeluarMins + pLate : minKeluarMins;
+
+                    // PENGECEKAN STRICT WINDOW (Batas Ketat)
+                    if (isStrictWindow) {
+                        let wStart = targetPulangToleransi - parseInt(db.settings.window_out_start || 0);
+                        let wEnd = targetPulangToleransi + parseInt(db.settings.window_out_end || 120);
+                        let currentMins = timeToMins(timeStr);
+                        if (currentMins < wStart || currentMins > wEnd) {
+                            alert(`DITOLAK: Jendela Waktu Absen Pulang ${currentTargetShift} HANYA DIBUKA antara pukul ${minsToTime(wStart)} s/d ${minsToTime(wEnd)}.`);
+                            closeModal('modal-absen'); return;
+                        }
+                    }
+
+                    if (timeToMins(timeStr) < targetPulangToleransi && !isStrictWindow) {
+                        // Cek manual jika strict tidak nyala, tapi belum waktunya pulang
+                        alert(`Ditolak: Anda belum diizinkan pulang sebelum pukul ${minsToTime(targetPulangToleransi)}.`); closeModal('modal-absen'); return;
                     }
                 }
                 record.timeOut = timeStr; record.status = "Selesai"; showToast(`Absen Pulang ${currentTargetShift} terekam.`);
@@ -889,10 +883,13 @@
         }
 
         function toggleAllSubjects(el) { document.querySelectorAll('.guru-sub-cb').forEach(cb => { cb.disabled = el.checked; if (el.checked) cb.checked = false; }); }
+        
         function toggleUserRoleFields() { 
             const role = document.getElementById('user-role').value; 
             document.getElementById('user-subjects-area').style.display = role === 'guru' ? 'block' : 'none'; 
-            document.getElementById('user-unit-area').style.display = role === 'guru' ? 'block' : 'none'; 
+            document.getElementById('user-jabatan-area').style.display = role === 'tendik' ? 'block' : 'none'; 
+            // Tendik juga butuh area Unit sekarang
+            document.getElementById('user-unit-area').style.display = 'block'; 
         }
 
         function openModalUser(id = null) {
@@ -902,6 +899,7 @@
             if (id) {
                 const u = db.users.find(x => x.id === id); 
                 document.getElementById('user-id').value = u.id; document.getElementById('user-role').value = u.role || 'guru'; document.getElementById('user-nama').value = u.name; document.getElementById('user-uname').value = u.username; document.getElementById('user-pass').value = ''; 
+                document.getElementById('user-jabatan').value = u.jabatan || '';
                 
                 // Centang Unit
                 const uUnits = u.unit ? u.unit.split(',') : [];
@@ -912,8 +910,9 @@
                 else { allCb.checked = false; const subs = u.subjects.split(','); document.querySelectorAll('.guru-sub-cb').forEach(cb => { cb.disabled = false; cb.checked = subs.includes(cb.value); }); }
             } else { 
                 document.getElementById('form-user').reset(); document.getElementById('user-id').value = ''; document.getElementById('user-role').value = 'guru';
+                document.getElementById('user-jabatan').value = '';
                 document.getElementById('user-sub-all').checked = true; toggleAllSubjects(document.getElementById('user-sub-all')); 
-                document.querySelectorAll('.user-cb-unit').forEach(cb => cb.checked = false); // Default unchecked
+                document.querySelectorAll('.user-cb-unit').forEach(cb => cb.checked = false);
             }
             toggleUserRoleFields(); showModal('modal-add-user');
         }
@@ -921,23 +920,25 @@
         function saveUser(e) { 
             e.preventDefault(); 
             const id = document.getElementById('user-id').value, name = document.getElementById('user-nama').value, uname = document.getElementById('user-uname').value, pass = document.getElementById('user-pass').value, role = document.getElementById('user-role').value; 
+            const jabatan = document.getElementById('user-jabatan').value;
             
             let subsStr = 'ALL', unitStr = ''; 
+            const checkedUnits = Array.from(document.querySelectorAll('.user-cb-unit:checked')).map(cb => cb.value);
+            if (checkedUnits.length === 0) return alert("Pilih minimal 1 Shift Unit Penugasan (SD, TPQ, atau Tahfiz)!");
+            unitStr = checkedUnits.join(',');
+
             if (role === 'guru') {
                 if (!document.getElementById('user-sub-all').checked) { const checked = Array.from(document.querySelectorAll('.guru-sub-cb:checked')).map(cb => cb.value); if (checked.length === 0) return alert("Pilih minimal 1 Mapel atau centang Guru Kelas Utama."); subsStr = checked.join(','); }
-                const checkedUnits = Array.from(document.querySelectorAll('.user-cb-unit:checked')).map(cb => cb.value);
-                if (checkedUnits.length === 0) return alert("Pilih minimal 1 Unit Penugasan (SD, TPQ, atau Tahfiz) untuk Guru.");
-                unitStr = checkedUnits.join(',');
             }
             
             let payload; 
             if (id) { 
                 const idx = db.users.findIndex(u => u.id === id); 
-                if (idx > -1) { db.users[idx].name = name; db.users[idx].username = uname; db.users[idx].role = role; db.users[idx].subjects = subsStr; db.users[idx].unit = unitStr; if (pass) db.users[idx].password = pass; payload = db.users[idx]; } 
+                if (idx > -1) { db.users[idx].name = name; db.users[idx].username = uname; db.users[idx].role = role; db.users[idx].subjects = subsStr; db.users[idx].unit = unitStr; db.users[idx].jabatan = jabatan; if (pass) db.users[idx].password = pass; payload = db.users[idx]; } 
                 showToast("Akun Diperbarui."); 
             } else { 
                 if (db.users.find(u => u.username === uname)) return alert("Username sudah terpakai."); 
-                payload = { id: 'u_' + Date.now(), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr }; 
+                payload = { id: 'u_' + Date.now(), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr, jabatan: jabatan }; 
                 db.users.push(payload); showToast("Akun Baru Dibuat."); 
             } 
             saveDB(); pushToBackend('save_user', payload); closeModal('modal-add-user'); renderAdminUser(role); 
@@ -952,11 +953,12 @@
             
             filteredUsers.forEach(g => { 
                 let badgeUnit = '';
-                if(g.role === 'guru') {
-                    const un = g.unit ? g.unit.split(',') : [];
-                    un.forEach(u => badgeUnit += `<span class="text-[9px] bg-blue-100 text-blue-800 px-1 rounded mr-1 shadow-sm">${u}</span>`);
-                }
-                listEl.innerHTML += `<div class="bg-white border p-3 rounded-xl flex justify-between items-center shadow-sm"><div><p class="font-bold text-sm text-gray-800">${g.name}</p><p class="text-[11px] text-gray-500"><i class="ph ph-fingerprint"></i> ${g.username}</p><div class="mt-1 flex flex-wrap gap-1">${badgeUnit}</div></div><div class="flex gap-2"><button onclick="openModalUser('${g.id}')" class="p-2 bg-gray-50 border rounded"><i class="ph ph-pencil-simple"></i></button><button onclick="deleteUser('${g.id}')" class="p-2 bg-red-50 border rounded"><i class="ph ph-trash text-red-600"></i></button></div></div>`; 
+                const un = g.unit ? g.unit.split(',') : [];
+                un.forEach(u => badgeUnit += `<span class="text-[9px] bg-blue-100 text-blue-800 px-1 rounded mr-1 shadow-sm">${u}</span>`);
+                
+                let extraInfo = g.role === 'tendik' && g.jabatan ? `<p class="text-[10px] text-orange-600 font-bold mb-1">${g.jabatan}</p>` : '';
+
+                listEl.innerHTML += `<div class="bg-white border p-3 rounded-xl flex justify-between items-center shadow-sm"><div><p class="font-bold text-sm text-gray-800">${g.name}</p>${extraInfo}<p class="text-[11px] text-gray-500"><i class="ph ph-fingerprint"></i> ${g.username}</p><div class="mt-1 flex flex-wrap gap-1">${badgeUnit}</div></div><div class="flex gap-2"><button onclick="openModalUser('${g.id}')" class="p-2 bg-gray-50 border rounded"><i class="ph ph-pencil-simple"></i></button><button onclick="deleteUser('${g.id}')" class="p-2 bg-red-50 border rounded"><i class="ph ph-trash text-red-600"></i></button></div></div>`; 
             }); 
         }
 
@@ -1081,42 +1083,50 @@
             
             let targetSD = [], targetTPQ = [], targetTahfiz = [];
 
-            db.users.filter(u => u.role === 'guru').forEach(guru => {
+            db.users.filter(u => u.role === 'guru' || u.role === 'tendik').forEach(pegawai => {
                 let hasSD = false, hasTPQ = false, hasTahfiz = false;
 
-                const jadwalHariIni = db.schedules.filter(s => s.teacherId === guru.id && s.day === todayName);
-                jadwalHariIni.forEach(s => {
-                    const c = db.classes.find(x => x.id === s.classId);
-                    if(c) {
-                        if(c.shift === 'SD' || !c.shift) hasSD = true;
-                        else if(c.shift === 'TPQ') hasTPQ = true;
-                        else if(c.shift === 'Tahfiz') hasTahfiz = true;
-                    }
-                });
+                if (pegawai.role === 'tendik') {
+                    const myUnits = pegawai.unit ? pegawai.unit.split(',') : [];
+                    if(myUnits.includes('SD')) hasSD = true;
+                    if(myUnits.includes('TPQ')) hasTPQ = true;
+                    if(myUnits.includes('Tahfiz')) hasTahfiz = true;
+                } else {
+                    const jadwalHariIni = db.schedules.filter(s => s.teacherId === pegawai.id && s.day === todayName);
+                    jadwalHariIni.forEach(s => {
+                        const c = db.classes.find(x => x.id === s.classId);
+                        if(c) {
+                            if(c.shift === 'SD' || !c.shift) hasSD = true;
+                            else if(c.shift === 'TPQ') hasTPQ = true;
+                            else if(c.shift === 'Tahfiz') hasTahfiz = true;
+                        }
+                    });
 
-                const piketHariIni = db.pickets.filter(p => p.userId === guru.id && p.day === todayName);
-                piketHariIni.forEach(p => {
-                    if(p.shift === 'SD') hasSD = true;
-                    else if(p.shift === 'TPQ') hasTPQ = true;
-                    else if(p.shift === 'Tahfiz') hasTahfiz = true;
-                });
+                    const piketHariIni = db.pickets.filter(p => p.userId === pegawai.id && p.day === todayName);
+                    piketHariIni.forEach(p => {
+                        if(p.shift === 'SD') hasSD = true;
+                        else if(p.shift === 'TPQ') hasTPQ = true;
+                        else if(p.shift === 'Tahfiz') hasTahfiz = true;
+                    });
 
-                if (!hasSD && !hasTPQ && !hasTahfiz && db.settings.wajib_absen_kosong === 'true') {
-                    if (db.settings.mode_absen_kosong === 'pagi') { hasSD = true; } 
-                    else {
-                        const myUnits = guru.unit ? guru.unit.split(',') : [];
-                        if(myUnits.includes('SD')) hasSD = true;
-                        if(myUnits.includes('TPQ')) hasTPQ = true;
-                        if(myUnits.includes('Tahfiz')) hasTahfiz = true;
+                    if (!hasSD && !hasTPQ && !hasTahfiz && db.settings.wajib_absen_kosong === 'true') {
+                        if (db.settings.mode_absen_kosong === 'pagi') { hasSD = true; } 
+                        else {
+                            const myUnits = pegawai.unit ? pegawai.unit.split(',') : [];
+                            if(myUnits.includes('SD')) hasSD = true;
+                            if(myUnits.includes('TPQ')) hasTPQ = true;
+                            if(myUnits.includes('Tahfiz')) hasTahfiz = true;
+                        }
                     }
                 }
 
-                const objIzin = db.izin.find(i => { if (i.userId !== guru.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
+                const objIzin = db.izin.find(i => { if (i.userId !== pegawai.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
                 const strIzin = objIzin ? ' <span class="bg-blue-100 text-blue-700 text-[9px] px-1 rounded ml-1">IZIN/CUTI</span>' : '';
+                const titleStr = pegawai.role === 'tendik' ? `<span class="bg-orange-100 text-orange-800 px-1 rounded text-[9px]">TENDIK</span> ${pegawai.name}` : pegawai.name;
 
-                if(hasSD) targetSD.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${guru.name} ${strIzin}</div>`);
-                if(hasTPQ) targetTPQ.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${guru.name} ${strIzin}</div>`);
-                if(hasTahfiz) targetTahfiz.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${guru.name} ${strIzin}</div>`);
+                if(hasSD) targetSD.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${titleStr} ${strIzin}</div>`);
+                if(hasTPQ) targetTPQ.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${titleStr} ${strIzin}</div>`);
+                if(hasTahfiz) targetTahfiz.push(`<div class="text-xs border-b py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400"></i> ${titleStr} ${strIzin}</div>`);
             });
 
             const buildHtml = (title, arr, color) => `
@@ -1178,30 +1188,30 @@
                 targetUsers.forEach(karyawan => {
                     const izinToday = db.izin.find(i => { if (i.userId !== karyawan.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
 
-                    if (karyawan.role === 'tendik') {
-                        const r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === 'Tendik');
-                        let isWorkingDay = false; try { const setJ = JSON.parse(db.settings.daily_times); if(setJ[namaHari] && setJ[namaHari].tendikIn) isWorkingDay = true; }catch(e){}
-                        if (r || izinToday || isWorkingDay) { cetakBarisLaporan(tbody, dateStr, karyawan.name, 'Tendik', r, izinToday, ''); totalRows++; }
-                    } else {
-                        // Cek 3 Unit untuk Guru
-                        ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
-                            const hasSched = db.schedules.some(s => s.teacherId === karyawan.id && s.day === namaHari && (db.classes.find(c=>c.id===s.classId)?.shift||'SD') === shift);
-                            const isPiket = db.pickets.find(p => p.userId === karyawan.id && p.day === namaHari && p.shift === shift) != null;
-                            const r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === shift);
-                            
-                            // Logika Wajib Absen Khusus Laporan
-                            let isWajibTarget = false;
+                    // Guru maupun Tendik sekarang pakai Unit (SD, TPQ, Tahfiz)
+                    ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
+                        let hasSched = false, isPiket = false, isWajibTarget = false;
+                        const myUnits = karyawan.unit ? karyawan.unit.split(',') : [];
+
+                        if (karyawan.role === 'tendik') {
+                            if (myUnits.includes(shift)) isWajibTarget = true; 
+                        } else {
+                            hasSched = db.schedules.some(s => s.teacherId === karyawan.id && s.day === namaHari && (db.classes.find(c=>c.id===s.classId)?.shift||'SD') === shift);
+                            isPiket = db.pickets.find(p => p.userId === karyawan.id && p.day === namaHari && p.shift === shift) != null;
                             if(!hasSched && !isPiket && db.settings.wajib_absen_kosong === 'true') {
                                 if(db.settings.mode_absen_kosong === 'pagi' && shift === 'SD') isWajibTarget = true;
-                                else { const myUnits = karyawan.unit ? karyawan.unit.split(',') : []; if(myUnits.includes(shift)) isWajibTarget = true; }
+                                else if (myUnits.includes(shift)) isWajibTarget = true;
                             }
+                        }
 
-                            if (r || izinToday || hasSched || isPiket || isWajibTarget) {
-                                let infoRoster = (isPiket ? '<b>[PIKET]</b> ' : '') + (isWajibTarget && !hasSched && !isPiket ? '<b>[Wajib Apel]</b>' : '');
-                                cetakBarisLaporan(tbody, dateStr, karyawan.name, `Guru - ${shift}`, r, izinToday, infoRoster); totalRows++;
-                            }
-                        });
-                    }
+                        const r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === shift);
+                        
+                        if (r || izinToday || hasSched || isPiket || isWajibTarget) {
+                            let roleLbl = karyawan.role === 'tendik' ? `Tendik (${karyawan.jabatan||'-'}) - ${shift}` : `Guru - ${shift}`;
+                            let infoRoster = (isPiket ? '<b>[PIKET]</b> ' : '') + (isWajibTarget && !hasSched && !isPiket ? '<b>[Wajib Apel]</b>' : '');
+                            cetakBarisLaporan(tbody, dateStr, karyawan.name, roleLbl, r, izinToday, infoRoster); totalRows++;
+                        }
+                    });
                 });
             });
             if (totalRows === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-gray-500 italic">Data nihil.</td></tr>';
@@ -1221,6 +1231,15 @@
             tbodyHTML.innerHTML += `<tr class="hover:bg-gray-50"><td class="py-2.5 px-2 border-b font-mono text-[10px]">${dateStr}</td><td class="py-2.5 px-2 border-b font-bold">${nama}</td><td class="py-2.5 px-2 border-b text-[9px] font-bold">${labelShift}</td><td class="py-2.5 px-2 border-b text-[10px]">${stringJam}</td><td class="py-2.5 px-2 border-b text-[9px]">${badgDisip}</td><td class="py-2.5 px-2 border-b text-[10px] text-gray-600">${infoKolomAkhir}</td></tr>`;
         }
 
+        function toggleStrictWindowUI() {
+            const isChecked = document.getElementById('set-strict-window').checked;
+            document.getElementById('container-strict-window').style.opacity = isChecked ? '1' : '0.4';
+            document.getElementById('set-window-in-start').disabled = !isChecked;
+            document.getElementById('set-window-in-end').disabled = !isChecked;
+            document.getElementById('set-window-out-start').disabled = !isChecked;
+            document.getElementById('set-window-out-end').disabled = !isChecked;
+        }
+
         function populatePengaturanWaktu() {
             const cont = document.getElementById('daily-times-container'); cont.innerHTML = '';
             let daily = {}; try { daily = JSON.parse(db.settings.daily_times || '{}'); } catch(e){} 
@@ -1233,13 +1252,21 @@
 
             document.getElementById('set-piket-early').value = db.settings.piket_early || '15'; document.getElementById('set-piket-late').value = db.settings.piket_late || '15';
 
+            // Populate Strict Window Settings
+            document.getElementById('set-strict-window').checked = db.settings.strict_absen_window === 'true';
+            document.getElementById('set-window-in-start').value = db.settings.window_in_start || '60';
+            document.getElementById('set-window-in-end').value = db.settings.window_in_end || '60';
+            document.getElementById('set-window-out-start').value = db.settings.window_out_start || '0';
+            document.getElementById('set-window-out-end').value = db.settings.window_out_end || '120';
+            toggleStrictWindowUI();
+
             ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].forEach(hari => {
-                const t = daily[hari] || { sdIn: '', sdOut: '', tpqIn: '', tpqOut: '', tahfizIn: '', tahfizOut: '', tendikIn: '', tendikOut: '' };
+                const t = daily[hari] || { sdIn: '', sdOut: '', tpqIn: '', tpqOut: '', tahfizIn: '', tahfizOut: '' };
                 
                 cont.innerHTML += `
                 <div class="border border-gray-200 rounded-lg p-3 bg-gray-50 text-[10px] shadow-sm mb-3">
                     <p class="font-bold mb-2 uppercase tracking-widest text-sm text-gray-700">${hari}</p>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-3 gap-2">
                         <div class="bg-white p-2 rounded border border-blue-100 shadow-inner">
                             <span class="text-blue-600 font-bold block mb-1">SD (Pagi)</span>
                             M: <input type="time" class="border rounded px-1 py-1 w-full mb-1 t-sd-i-${hari}" value="${t.sdIn}"> 
@@ -1255,11 +1282,6 @@
                             M: <input type="time" class="border rounded px-1 py-1 w-full mb-1 t-tahfiz-i-${hari}" value="${t.tahfizIn}"> 
                             P: <input type="time" class="border rounded px-1 py-1 w-full t-tahfiz-o-${hari}" value="${t.tahfizOut}">
                         </div>
-                        <div class="bg-gray-800 p-2 rounded border border-gray-900 shadow-inner text-white">
-                            <span class="text-gray-300 font-bold block mb-1">Tendik</span>
-                            M: <input type="time" class="border border-gray-600 bg-gray-700 rounded px-1 py-1 w-full mb-1 t-tendik-i-${hari}" value="${t.tendikIn}"> 
-                            P: <input type="time" class="border border-gray-600 bg-gray-700 rounded px-1 py-1 w-full t-tendik-o-${hari}" value="${t.tendikOut}">
-                        </div>
                     </div>
                 </div>`;
             });
@@ -1271,8 +1293,7 @@
                 daily[hari] = {
                     sdIn: document.querySelector(`.t-sd-i-${hari}`).value, sdOut: document.querySelector(`.t-sd-o-${hari}`).value,
                     tpqIn: document.querySelector(`.t-tpq-i-${hari}`).value, tpqOut: document.querySelector(`.t-tpq-o-${hari}`).value,
-                    tahfizIn: document.querySelector(`.t-tahfiz-i-${hari}`).value, tahfizOut: document.querySelector(`.t-tahfiz-o-${hari}`).value,
-                    tendikIn: document.querySelector(`.t-tendik-i-${hari}`).value, tendikOut: document.querySelector(`.t-tendik-o-${hari}`).value
+                    tahfizIn: document.querySelector(`.t-tahfiz-i-${hari}`).value, tahfizOut: document.querySelector(`.t-tahfiz-o-${hari}`).value
                 };
             });
             db.settings.daily_times = JSON.stringify(daily);
@@ -1280,6 +1301,12 @@
             db.settings.mode_absen_kosong = document.getElementById('set-mode-absen').value;
             db.settings.piket_early = document.getElementById('set-piket-early').value || '15';
             db.settings.piket_late = document.getElementById('set-piket-late').value || '15';
+            
+            db.settings.strict_absen_window = document.getElementById('set-strict-window').checked ? 'true' : 'false';
+            db.settings.window_in_start = document.getElementById('set-window-in-start').value || '60';
+            db.settings.window_in_end = document.getElementById('set-window-in-end').value || '60';
+            db.settings.window_out_start = document.getElementById('set-window-out-start').value || '0';
+            db.settings.window_out_end = document.getElementById('set-window-out-end').value || '120';
             
             saveDB(); pushToBackend('save_settings', db.settings); showToast("Konfigurasi Parameter Tersimpan.");
         }

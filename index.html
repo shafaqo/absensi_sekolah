@@ -299,7 +299,12 @@
                             <div>
                                 <label class="text-[10px] font-bold">Kategori Karyawan</label>
                                 <select id="report-role-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none" onchange="updateLaporanGuruFilter()">
-                                    <option value="all">Semua Kategori (Guru & Tendik)</option><option value="guru">Hanya Guru</option><option value="tendik">Hanya Tendik</option>
+                                    <option value="all">Semua Kategori (Guru & Tendik)</option>
+                                    <option value="guru">Hanya Guru</option>
+                                    <option value="tendik">Hanya Tendik</option>
+                                    <option value="SD">Hanya Unit SD (Pagi)</option>
+                                    <option value="TPQ">Hanya Unit TPQ (Sore)</option>
+                                    <option value="Tahfiz">Hanya Unit Tahfiz</option>
                                 </select>
                             </div>
                             <!-- Filter Orang Tertentu -->
@@ -1583,7 +1588,7 @@
         function updateLaporanGuruFilter() { const r = document.getElementById('report-role-filter').value; const sel = document.getElementById('report-user-filter'); sel.innerHTML = '<option value="all">-- Semua Nama (Massal) --</option>'; let t = db.users; if (r !== 'all') t = t.filter(u => u.role === r); t.forEach(g => sel.innerHTML += `<option value="${g.id}">${g.name} (${g.role})</option>`); }
 
         function generateReport() {
-            const start = document.getElementById('report-date-start').value, end = document.getElementById('report-date-end').value, roleId = document.getElementById('report-role-filter').value, userId = document.getElementById('report-user-filter').value;
+            const start = document.getElementById('report-date-start').value, end = document.getElementById('report-date-end').value, roleId = document.getElementById('report-role-filter').value, userId = document.getElementById('report-user-filter').value, unitId = document.getElementById('report-unit-filter').value;
             if (!start || !end) return alert("Pilih kotak tanggal!"); if (start > end) return alert("Hukum fisika dilanggar: Tanggal selesai melampaui tanggal mulai!");
             
             document.getElementById('print-area').classList.remove('hidden'); document.getElementById('print-periode').innerText = `Periode Rekap: ${start} s/d ${end}`;
@@ -1602,8 +1607,14 @@
                 targetUsers.forEach(karyawan => {
                     const izinToday = db.izin.find(i => { if (i.userId !== karyawan.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
 
-                    // Guru maupun Tendik sekarang dievaluasi berdasarkan 3 Unit Master Shift
-                    ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
+                    // Tentukan unit mana yang akan direkap berdasarkan pilihan filter
+                    let targetUnits = ['SD', 'TPQ', 'Tahfiz'];
+                    if (unitId !== 'all') {
+                        targetUnits = [unitId]; // Jika user memilih SD saja, arraynya menjadi ['SD']
+                    }
+                    
+                    // Guru maupun Tendik sekarang dievaluasi berdasarkan Unit Master Shift
+                    targetUnits.forEach(shift => {
                         let hasSched = false, isPiket = false, isWajibTarget = false;
                         const myUnits = karyawan.unit ? karyawan.unit.split(',') : [];
 

@@ -299,9 +299,14 @@
                             <div>
                                 <label class="text-[10px] font-bold">Kategori Karyawan</label>
                                 <select id="report-role-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none" onchange="updateLaporanGuruFilter()">
-                                    <option value="all">Semua Kategori (Guru & Tendik)</option>
-                                    <option value="guru">Hanya Guru</option>
-                                    <option value="tendik">Hanya Tendik</option>
+                                    <option value="all">Semua Kategori (Guru & Tendik)</option><option value="guru">Hanya Guru</option><option value="tendik">Hanya Tendik</option>
+                                </select>
+                            </div>
+                            <!-- Filter Unit Sekolah (TAMBAHAN BARU) -->
+                            <div>
+                                <label class="text-[10px] font-bold">Filter Unit Sekolah</label>
+                                <select id="report-unit-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none">
+                                    <option value="all">-- Keseluruhan Sekolah --</option>
                                     <option value="SD">Hanya Unit SD (Pagi)</option>
                                     <option value="TPQ">Hanya Unit TPQ (Sore)</option>
                                     <option value="Tahfiz">Hanya Unit Tahfiz</option>
@@ -1607,13 +1612,13 @@
                 targetUsers.forEach(karyawan => {
                     const izinToday = db.izin.find(i => { if (i.userId !== karyawan.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
 
-                    // Tentukan unit mana yang akan direkap berdasarkan pilihan filter
+                    // Tentukan target unit berdasarkan filter baru
                     let targetUnits = ['SD', 'TPQ', 'Tahfiz'];
                     if (unitId !== 'all') {
-                        targetUnits = [unitId]; // Jika user memilih SD saja, arraynya menjadi ['SD']
+                        targetUnits = [unitId]; 
                     }
-                    
-                    // Guru maupun Tendik sekarang dievaluasi berdasarkan Unit Master Shift
+
+                    // Guru maupun Tendik sekarang dievaluasi berdasarkan target Unit
                     targetUnits.forEach(shift => {
                         let hasSched = false, isPiket = false, isWajibTarget = false;
                         const myUnits = karyawan.unit ? karyawan.unit.split(',') : [];

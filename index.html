@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi & Akademik - SD Tafdhil Al Qur'an</title>
+    <title>Sistem Absensi AI & Akademik - SD Tafdhil Al Qur'an</title>
     <!-- Import Tailwind CSS untuk desain UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import Phosphor Icons untuk ikon-ikon (kamera, user, dll) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Import Font Inter dari Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- NEW: Import face-api.js untuk Face Recognition murni di sisi Frontend/Browser -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
     <!-- Konfigurasi warna kustom Tailwind -->
     <script>
         tailwind.config = {
@@ -26,24 +29,30 @@
         .pill-active { background-color: #92400E; color: white; border-color: #92400E; }
         /* Pengaturan khusus saat dicetak (Print Laporan) */
         @media print { .no-print { display: none !important; } body { background-color: #fff; } .print-container { padding: 0 !important; width: 100% !important; max-width: 100% !important; display: block !important; } #print-area { border: none !important; box-shadow: none !important; } }
-        /* Efek animasi garis memindai pada kamera */
+        /* Efek animasi garis memindai pada kamera (Hanya visual tambahan) */
         .scan-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 50%, rgba(34, 197, 94, 0.2) 51%, rgba(255, 255, 255, 0) 100%); background-size: 100% 20px; animation: scan 2s linear infinite; pointer-events: none; }
         @keyframes scan { 0% { background-position: 0 -100px; } 100% { background-position: 0 100vh; } }
+        /* Canvas Khusus Face API agar bounding box wajah tumpang tindih presisi dengan Video */
+        #face-canvas { position: absolute; top: 0; left: 0; z-index: 10; width: 100%; height: 100%; pointer-events: none; }
+        #reg-face-canvas { position: absolute; top: 0; left: 0; z-index: 10; width: 100%; height: 100%; pointer-events: none; }
     </style>
 </head>
 
 <body class="antialiased min-h-screen flex flex-col items-center">
 
-    <!-- Animasi Loading Layar Penuh saat Sinkronisasi awal -->
-    <div id="global-loading" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center hidden">
-        <i class="ph ph-spinner-gap text-5xl text-black animate-spin mb-4"></i><p class="text-sm font-medium text-gray-600">Sinkronisasi Database...</p>
+    <!-- Animasi Loading Layar Penuh saat Sinkronisasi awal & Memuat Model AI (Face API) -->
+    <div id="global-loading" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
+        <i class="ph ph-spinner-gap text-5xl text-black animate-spin mb-4"></i>
+        <p class="text-sm font-medium text-gray-800 font-bold" id="loading-text">Menghidupkan Mesin AI...</p>
+        <p class="text-[10px] text-gray-500 mt-1 max-w-xs text-center">Mengunduh Model Kecerdasan Buatan (Face Recognition). Mohon tunggu sejenak, butuh koneksi stabil.</p>
     </div>
+    
     <!-- Indikator Loading Kecil di pojok kanan atas untuk sinkronisasi latar belakang -->
     <div id="sync-indicator" class="fixed top-2 right-2 bg-black text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1 z-50 shadow-lg hidden">
         <i class="ph ph-arrows-clockwise animate-spin"></i>
     </div>
 
-    <!-- Wadah Utama Aplikasi (Membatasi lebar seperti tampilan HP/Tablet) -->
+    <!-- Wadah Utama Aplikasi -->
     <div id="app-container" class="w-full max-w-md md:max-w-xl bg-white min-h-screen shadow-2xl relative overflow-hidden print-container">
 
         <!-- ================= VIEW: HALAMAN LOGIN ================= -->
@@ -52,7 +61,7 @@
                 <img src="yayasan.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RkZCIvPjwvc3ZnPg=='; this.onerror=null;" class="w-40 h-auto mx-auto object-contain hover:scale-105 transition-transform duration-300">
                 <br>
                 <h1 class="text-2xl font-bold tracking-tight">Yayasan Fadli <br>Ar-Ridhwaniyah</h1>
-                <p class="text-gray-500 text-sm mt-1">Portal Absensi & Akademik <br> SD Tafdhil Al Qur'an & TPQ</p>
+                <p class="text-gray-500 text-sm mt-1">Portal Absensi Biometrik & Akademik <br> SD Tafdhil Al Qur'an & TPQ</p>
             </div>
             <!-- Form Login -->
             <form id="login-form" class="space-y-4">
@@ -68,17 +77,14 @@
 
         <!-- ================= VIEW: JADWAL PUBLIK ================= -->
         <div id="view-public" class="flex flex-col h-screen hidden bg-gray-50">
-            <!-- Header Jadwal Publik -->
             <div class="bg-black text-white p-4 sticky top-0 z-10 flex items-center shadow-md">
                 <button onclick="navTo('login')" class="p-2 mr-2 active:scale-90 hover:bg-gray-800 rounded-full"><i class="ph ph-arrow-left text-xl"></i></button>
                 <div><h2 class="font-semibold">Informasi Jadwal Kelas</h2><p class="text-xs text-gray-300" id="public-date-display"></p></div>
             </div>
-            <!-- Filter Hari -->
             <div class="bg-white p-3 border-b border-gray-200 flex gap-2 overflow-x-auto whitespace-nowrap sticky top-[68px] z-10">
                 <button onclick="renderPublicBoard('hari_ini')" id="btn-pub-hari_ini" class="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active">Hari Ini</button>
                 <button onclick="renderPublicBoard('besok')" id="btn-pub-besok" class="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600">Besok</button>
             </div>
-            <!-- Daftar Jadwal -->
             <div class="p-4 flex-1 overflow-y-auto pb-10">
                 <div id="public-schedule-list" class="space-y-4"></div>
             </div>
@@ -86,7 +92,6 @@
 
         <!-- ================= VIEW: DASHBOARD GURU & TENDIK ================= -->
         <div id="view-guru" class="flex flex-col h-screen hidden pb-16 relative bg-gray-50">
-            <!-- Header Dashboard User -->
             <div class="bg-white p-5 border-b border-gray-200 flex justify-between items-center z-10 no-print sticky top-0 shadow-sm">
                 <div><p class="text-xs text-gray-500" id="user-greeting">Selamat datang,</p><h2 id="guru-name" class="font-bold text-lg truncate w-48">-</h2></div>
                 <div class="flex gap-2">
@@ -95,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- Konten Dashboard User -->
             <div class="flex-1 overflow-y-auto p-4 space-y-6">
                 <!-- Baris Jam dan Status Piket -->
                 <div class="flex justify-between items-center bg-gray-200 p-2 rounded-lg">
@@ -103,13 +107,32 @@
                     <span id="guru-piket-badge" class="hidden bg-orange-500 text-white px-2 py-1 rounded text-[10px] font-bold"><i class="ph ph-shield-check"></i> Petugas Piket Hari Ini</span>
                 </div>
 
-                <!-- KOTAK NOTIFIKASI IZIN TERBARU (Baru ditambahkan) -->
+                <!-- BOX PERINGATAN WAJAH BELUM TERDAFTAR (Face Recognition) -->
+                <div id="alert-face-register" class="hidden bg-red-50 border border-red-200 p-4 rounded-xl shadow-sm">
+                    <div class="flex gap-3 items-start">
+                        <i class="ph ph-warning text-3xl text-red-500"></i>
+                        <div>
+                            <h4 class="font-bold text-red-800 text-sm mb-1">Aksi Diperlukan: Pendaftaran Wajah</h4>
+                            <p class="text-xs text-red-600 mb-3 leading-tight">Anda belum mendaftarkan wajah di sistem biometrik ini. Anda <b>tidak akan bisa melakukan Absen</b> sebelum mendaftarkan wajah Anda.</p>
+                            <button onclick="openFaceRegistrationModal()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow hover:bg-red-700 transition flex items-center gap-1"><i class="ph ph-scan"></i> Daftarkan Wajah Saya Sekarang</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOTAK NOTIFIKASI IZIN TERBARU -->
                 <div id="notif-izin-user" class="hidden shadow-sm"></div>
                 <!-- Peringatan jika sedang izin Full Day hari ini -->
                 <div id="status-izin-user" class="hidden bg-blue-50 text-blue-700 p-4 rounded-xl text-sm border border-blue-200 shadow-sm"></div>
 
                 <!-- WADAH KARTU ABSENSI DINAMIS (Muncul sesuai penugasan Unit) -->
                 <div id="attendance-cards-container" class="space-y-4">
+                    
+                    <!-- Kartu Info: Mode Absen Opsional (Jika guru sedang tidak ada jadwal) -->
+                    <div id="card-opsional-info" class="hidden bg-blue-50 border border-blue-200 p-3 rounded-lg flex gap-2 items-start shadow-sm">
+                        <i class="ph ph-info text-blue-500 text-xl"></i>
+                        <p class="text-[10px] text-blue-800 leading-tight"><b>Hari ini jadwal Anda sedang kosong / off.</b><br>Sistem memunculkan kartu unit asal Anda, namun absensi bersifat <u>Opsional (Sunnah)</u>. Tidak akan dihitung ALFA jika tidak absen.</p>
+                    </div>
+
                     <!-- Kartu Absen Unit SD -->
                     <div id="card-absen-sd" class="hidden bg-blue-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
@@ -120,7 +143,7 @@
                             <div class="bg-blue-950 rounded-xl p-3 border border-blue-800"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-sd">--:--</p></div>
                             <div class="bg-blue-950 rounded-xl p-3 border border-blue-800"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-sd">--:--</p></div>
                         </div>
-                        <button onclick="openAbsenModal('SD')" class="w-full bg-white text-blue-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai Kehadiran SD</button>
+                        <button onclick="openAbsenModal('SD')" class="w-full bg-white text-blue-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai AI - Absen SD</button>
                     </div>
 
                     <!-- Kartu Absen Unit TPQ -->
@@ -133,7 +156,7 @@
                             <div class="bg-orange-900 rounded-xl p-3 border border-orange-700"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-tpq">--:--</p></div>
                             <div class="bg-orange-900 rounded-xl p-3 border border-orange-700"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-tpq">--:--</p></div>
                         </div>
-                        <button onclick="openAbsenModal('TPQ')" class="w-full bg-white text-orange-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai Kehadiran TPQ</button>
+                        <button onclick="openAbsenModal('TPQ')" class="w-full bg-white text-orange-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai AI - Absen TPQ</button>
                     </div>
 
                     <!-- Kartu Absen Unit Tahfiz -->
@@ -146,23 +169,23 @@
                             <div class="bg-emerald-900 rounded-xl p-3 border border-emerald-700"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-tahfiz">--:--</p></div>
                             <div class="bg-emerald-900 rounded-xl p-3 border border-emerald-700"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-tahfiz">--:--</p></div>
                         </div>
-                        <button onclick="openAbsenModal('Tahfiz')" class="w-full bg-white text-emerald-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai Kehadiran Tahfiz</button>
+                        <button onclick="openAbsenModal('Tahfiz')" class="w-full bg-white text-emerald-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai AI - Absen Tahfiz</button>
                     </div>
 
-                    <!-- Peringatan jika hari ini tidak ada jadwal mengajar/tugas -->
+                    <!-- Peringatan jika hari ini FULL OFF (dan admin menyetel absen wajib mati) -->
                     <div id="card-no-schedule" class="hidden bg-gray-100 border border-gray-300 rounded-xl p-6 text-center text-gray-500">
-                        <i class="ph ph-calendar-check text-4xl mb-2"></i><p class="text-sm">Hari ini Anda sedang Off / Tidak ada kewajiban absen.</p>
+                        <i class="ph ph-calendar-check text-4xl mb-2 text-gray-400"></i><p class="text-sm font-bold text-gray-600">Hari Libur / Jadwal Kosong</p><p class="text-[10px] mt-1">Anda tidak memiliki kewajiban Absen untuk hari ini.</p>
                     </div>
                 </div>
 
                 <!-- Tombol Ajukan Izin -->
-                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex justify-between items-center">
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex justify-between items-center mt-4">
                     <div><h3 class="font-bold text-sm">Berhalangan Hadir?</h3><p class="text-[10px] text-gray-500">Ajukan Izin/Cuti dari sini.</p></div>
                     <button onclick="showModal('modal-ajukan-izin'); resetIzinForm();" class="bg-black text-white px-3 py-2 rounded-lg text-xs font-medium shadow-md">Ajukan Izin</button>
                 </div>
 
                 <!-- Daftar Roster/Jadwal Mengajar Khusus Guru -->
-                <div id="section-roster-guru">
+                <div id="section-roster-guru" class="pt-2">
                     <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="ph ph-calendar-list text-xl"></i> Roster Mengajar Saya</h3>
                     <div id="guru-full-schedule" class="space-y-2"></div>
                 </div>
@@ -175,8 +198,8 @@
             <div class="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-20 shadow-md no-print">
                 <div><h2 class="font-bold">Panel Administrator</h2><p class="text-xs text-gray-300">SD Tafdhil Al Qur'an</p></div>
                 <div class="flex gap-2">
-                    <button onclick="forceSync()" class="p-2 bg-dark rounded-full"><i class="ph ph-arrows-clockwise text-lg"></i></button>
-                    <button onclick="logout()" class="p-2 bg-dark rounded-full"><i class="ph ph-sign-out text-lg"></i></button>
+                    <button onclick="forceSync()" class="p-2 bg-dark rounded-full hover:bg-gray-800 transition"><i class="ph ph-arrows-clockwise text-lg"></i></button>
+                    <button onclick="logout()" class="p-2 bg-dark rounded-full hover:bg-gray-800 transition"><i class="ph ph-sign-out text-lg"></i></button>
                 </div>
             </div>
 
@@ -197,7 +220,7 @@
                 
                 <!-- TAB: Dasbor -->
                 <div id="admin-dashboard" class="space-y-4">
-                    <button onclick="bukaModalTargetKehadiran()" class="w-full bg-blue-600 text-white p-3 rounded-xl shadow-sm hover:bg-blue-700 font-bold flex items-center justify-center gap-2 mb-2 no-print"><i class="ph ph-users-three text-xl"></i> Lihat Target Kehadiran Hari Ini</button>
+                    <button onclick="bukaModalTargetKehadiran()" class="w-full bg-blue-600 text-white p-3 rounded-xl shadow-sm hover:bg-blue-700 font-bold flex items-center justify-center gap-2 mb-2 no-print transition"><i class="ph ph-users-three text-xl"></i> Lihat Target Kehadiran Hari Ini</button>
                     <!-- Kotak-kotak Statistik -->
                     <div class="grid grid-cols-2 gap-3 no-print">
                         <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm text-center"><i class="ph ph-users text-2xl mb-1 text-gray-400"></i><h4 class="text-2xl font-bold text-black" id="stat-total-guru">0</h4><p class="text-xs text-gray-500">Total Karyawan</p></div>
@@ -207,18 +230,18 @@
                     </div>
                     <!-- Riwayat Absen Terakhir -->
                     <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm no-print">
-                        <h3 class="font-bold mb-3 text-sm">Aktivitas Absensi Terbaru</h3>
+                        <h3 class="font-bold mb-3 text-sm flex items-center gap-2"><i class="ph ph-clock-counter-clockwise"></i> Aktivitas Absensi Terbaru</h3>
                         <div id="admin-recent-absen" class="space-y-3"></div>
                     </div>
                 </div>
 
                 <!-- TAB: Pengguna (Guru/Tendik) -->
                 <div id="admin-pengguna" class="hidden space-y-4 no-print">
-                    <button onclick="openModalUser()" class="w-full bg-black text-white p-3 rounded-lg font-medium shadow flex items-center justify-center gap-2"><i class="ph ph-user-plus text-lg"></i> Tambah Akun Baru</button>
+                    <button onclick="openModalUser()" class="w-full bg-black text-white p-3 rounded-lg font-medium shadow flex items-center justify-center gap-2 hover:bg-gray-800 transition"><i class="ph ph-user-plus text-lg"></i> Tambah Akun Baru</button>
                     <!-- Sub-Filter Guru / Tendik -->
                     <div class="flex gap-2 mb-2 border-b pb-2">
-                        <button onclick="renderAdminUser('guru')" id="subtab-usr-guru" class="text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner">Guru</button>
-                        <button onclick="renderAdminUser('tendik')" id="subtab-usr-tendik" class="text-xs font-bold px-3 py-1 bg-white border border-gray-200 rounded-full text-gray-500">Tendik</button>
+                        <button onclick="renderAdminUser('guru')" id="subtab-usr-guru" class="text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner transition">Guru</button>
+                        <button onclick="renderAdminUser('tendik')" id="subtab-usr-tendik" class="text-xs font-bold px-3 py-1 bg-white border border-gray-200 rounded-full text-gray-500 transition hover:bg-gray-50">Tendik</button>
                     </div>
                     <div id="admin-user-list" class="space-y-3"></div>
                 </div>
@@ -244,13 +267,16 @@
                             <select id="roster-class-filter" class="w-full bg-transparent text-sm font-semibold mt-1 outline-none" onchange="renderAdminJadwal()"></select>
                         </div>
                         <!-- Tombol Konfigurasi Slot Waktu (Roda Gigi) -->
-                        <button onclick="openModalConfigRoster()" class="bg-white border border-gray-200 px-4 rounded-xl shadow-sm hover:bg-gray-50"><i class="ph ph-gear text-2xl text-gray-600"></i></button>
+                        <button onclick="openModalConfigRoster()" class="bg-white border border-gray-200 px-4 rounded-xl shadow-sm hover:bg-gray-50 transition"><i class="ph ph-gear text-2xl text-gray-600"></i></button>
                     </div>
                     <!-- Area Aksi (Isi Jadwal Manual/Otomatis) -->
                     <div id="roster-action-area" class="hidden space-y-3">
-                        <div class="flex gap-2">
-                            <button onclick="showModal('modal-add-jadwal')" class="flex-1 bg-white border border-black p-2.5 rounded-lg text-xs font-medium hover:bg-gray-50">Sisip Manual</button>
-                            <button onclick="autoGenerateRoster()" class="flex-1 bg-blue-600 text-white p-2.5 rounded-lg text-xs font-medium shadow hover:bg-blue-700">Susun Otomatis AI</button>
+                        <div class="flex gap-2 bg-blue-50 p-2 rounded-lg border border-blue-100 items-center justify-between">
+                            <div class="flex-1">
+                                <p class="text-[10px] font-bold text-blue-800">Tarik Jadwal via Kecerdasan Buatan</p>
+                                <p class="text-[9px] text-blue-600 leading-tight">Pastikan Anda telah menyetel parameter jam di icon roda gigi.</p>
+                            </div>
+                            <button onclick="autoGenerateRoster()" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow hover:bg-blue-700 flex items-center gap-1 transition"><i class="ph ph-magic-wand text-lg"></i> Susun AI</button>
                         </div>
                         <!-- Tampilan Daftar Jadwal -->
                         <div id="roster-view-area" class="space-y-4 mt-4"></div>
@@ -273,8 +299,8 @@
                         </div>
                         <!-- Tombol Aksi Piket -->
                         <div class="flex gap-2 mb-3">
-                            <button onclick="openModalPiket()" class="flex-1 bg-black text-white text-xs py-2 rounded font-medium shadow">+ Pilih Manual</button>
-                            <button onclick="autoGeneratePiket()" class="flex-1 bg-blue-600 text-white text-xs py-2 rounded font-medium shadow flex items-center justify-center gap-1"><i class="ph ph-magic-wand"></i> Undi Acak AI</button>
+                            <button onclick="openModalPiket()" class="flex-1 bg-black text-white text-xs py-2 rounded font-medium shadow hover:bg-gray-800 transition">+ Pilih Manual</button>
+                            <button onclick="autoGeneratePiket()" class="flex-1 bg-blue-600 text-white text-xs py-2 rounded font-medium shadow flex items-center justify-center gap-1 hover:bg-blue-700 transition"><i class="ph ph-magic-wand"></i> Undi Acak AI</button>
                         </div>
                         <div id="piket-list" class="space-y-2 mt-4"></div>
                     </div>
@@ -302,11 +328,11 @@
                                     <option value="all">Semua Kategori (Guru & Tendik)</option><option value="guru">Hanya Guru</option><option value="tendik">Hanya Tendik</option>
                                 </select>
                             </div>
-                            <!-- Filter Unit Sekolah (TAMBAHAN BARU) -->
+                            <!-- Filter Unit Sekolah -->
                             <div>
                                 <label class="text-[10px] font-bold">Filter Unit Sekolah</label>
                                 <select id="report-unit-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none">
-                                    <option value="all">-- Keseluruhan Sekolah --</option>
+                                    <option value="all">-- Keseluruhan Sekolah (Semua Unit) --</option>
                                     <option value="SD">Hanya Unit SD (Pagi)</option>
                                     <option value="TPQ">Hanya Unit TPQ (Sore)</option>
                                     <option value="Tahfiz">Hanya Unit Tahfiz</option>
@@ -315,8 +341,8 @@
                             <!-- Filter Orang Tertentu -->
                             <div><label class="text-[10px] font-bold">Cari Nama (Opsional)</label><select id="report-user-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none"><option value="all">-- Massal / Semua Orang --</option></select></div>
                             <div class="flex gap-2 pt-2">
-                                <button onclick="generateReport()" class="flex-1 bg-black text-white p-2 rounded text-sm font-medium shadow hover:bg-gray-800">Tampilkan Data</button>
-                                <button onclick="window.print()" class="bg-white border border-black p-2 rounded text-sm font-medium hover:bg-gray-50 flex justify-center items-center gap-1"><i class="ph ph-printer"></i> Cetak Kertas</button>
+                                <button onclick="generateReport()" class="flex-1 bg-black text-white p-2 rounded text-sm font-medium shadow hover:bg-gray-800 transition">Tampilkan Data</button>
+                                <button onclick="window.print()" class="bg-white border border-black p-2 rounded text-sm font-medium hover:bg-gray-50 flex justify-center items-center gap-1 transition"><i class="ph ph-printer"></i> Cetak Kertas</button>
                             </div>
                         </div>
                     </div>
@@ -336,118 +362,125 @@
                 <div id="admin-pengaturan" class="hidden space-y-6 no-print">
                     
                     <!-- Form 1: Pengaturan Wajib Absen (Khusus Guru Kosong Jadwal) -->
-                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-2 flex items-center gap-2"><i class="ph ph-siren text-xl text-red-500"></i> Aturan Khusus (Guru Tanpa Jadwal)</h3>
-                        <p class="text-[10px] text-gray-500 mb-3">Tentukan apakah guru yang sedang tidak ada jadwal mengajar di hari itu tetap diwajibkan melakukan presensi/absen.</p>
+                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
+                        <h3 class="font-bold mb-2 flex items-center gap-2 text-red-600"><i class="ph ph-siren text-2xl"></i> Aturan Khusus: Guru Tanpa Jadwal</h3>
+                        <div class="text-[10px] text-gray-600 mb-3 space-y-1">
+                            <p>Tentukan nasib guru yang pada hari tersebut kebetulan sedang <b>TIDAK ADA</b> jadwal mengajar (Off).</p>
+                            <ul class="list-disc pl-4 text-gray-500">
+                                <li>Jika <span class="font-bold text-green-600">Dimatikan</span>: Guru yang off tombol absennya tetap muncul namun bersifat "Opsional". Mereka boleh absen jika datang, dan <u>tidak akan di-ALFA-kan</u> jika tidak absen.</li>
+                                <li>Jika <span class="font-bold text-red-600">Diaktifkan</span>: Guru yang off <u>Wajib Tetap Datang dan Absen</u> ke sekolah. Jika tidak, akan dianggap ALFA (Bolos).</li>
+                            </ul>
+                        </div>
                         <div class="bg-red-50 border border-red-200 p-3 rounded-lg space-y-3">
                             <label class="flex items-center gap-2 text-sm font-bold text-red-900 cursor-pointer">
-                                <input type="checkbox" id="set-wajib-absen" class="w-4 h-4 accent-red-600"> Aktifkan Kewajiban Absen Kosong
+                                <input type="checkbox" id="set-wajib-absen" class="w-5 h-5 accent-red-600 cursor-pointer transition"> 
+                                Aktifkan Kewajiban Absen Kosong
                             </label>
-                            <div id="container-mode-absen" class="pl-6 border-l-2 border-red-300 ml-2 transition-opacity">
-                                <label class="text-[10px] font-bold text-red-700 block mb-1 uppercase tracking-wider">Mekanisme Absen (Mode Apel)</label>
-                                <select id="set-mode-absen" class="w-full border border-red-300 rounded p-2 text-xs bg-white font-medium focus:border-red-500 outline-none">
-                                    <option value="shift">Absen sesuai Unit Tugas-nya (SD/TPQ/Tahfiz)</option>
-                                    <option value="pagi">Semua dipukul rata wajib absen Apel SD (Pagi)</option>
+                            <div id="container-mode-absen" class="pl-7 border-l-2 border-red-300 ml-2 transition-opacity duration-300">
+                                <label class="text-[10px] font-bold text-red-700 block mb-1 uppercase tracking-wider">Metode Pemaksaan Apel Kehadiran</label>
+                                <select id="set-mode-absen" class="w-full border border-red-300 rounded p-2 text-xs bg-white font-medium focus:border-red-500 outline-none cursor-pointer">
+                                    <option value="shift">Absen sesuai Unit Tugas-nya (Guru SD absen pagi, Guru TPQ absen sore)</option>
+                                    <option value="pagi">Apel Pagi Serentak! (Semua Guru, termasuk TPQ, dipaksa datang pagi untuk Tap SD)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <!-- Form 2: Pengaturan Waktu Absensi Global (Perpaduan Master Jam, Toleransi Piket, & Strict Window) -->
-                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-clock text-xl text-blue-600"></i> Konfigurasi Parameter Waktu Absensi</h3>
-                        <p class="text-[10px] text-gray-500 mb-4">Atur Master Jam Shift, Toleransi Keterlambatan Piket, dan Jendela Waktu Ketat (Strict Window) untuk masing-masing unit pendidikan.</p>
+                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
+                        <h3 class="font-bold mb-1 flex items-center gap-2 text-blue-700"><i class="ph ph-clock text-2xl"></i> Kalibrasi Parameter Waktu & Dispensi</h3>
+                        <p class="text-[10px] text-gray-500 mb-4 border-b pb-3">Area untuk menyetel Master Jam Shift (Jadwal normal buka/tutup absen), Toleransi Keterlambatan Piket (Maju/Mundur dari jadwal normal), dan fitur kunci jendela (Strict Window) untuk masing-masing unit pendidikan.</p>
                         
                         <form id="form-settings-absen" class="space-y-6">
                             
                             <!-- Master Toggle Strict Window -->
-                            <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg">
-                                <label class="flex items-center gap-2 text-sm font-bold text-purple-900 cursor-pointer">
-                                    <input type="checkbox" id="set-strict-window" class="w-4 h-4 accent-purple-600" onchange="toggleStrictWindowUI()"> 
-                                    <i class="ph ph-lock-key text-lg"></i> Kunci Tombol Absen di Luar Batas Waktu (Strict Window)
+                            <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg shadow-inner">
+                                <label class="flex items-start gap-2 text-sm font-bold text-purple-900 cursor-pointer mb-2">
+                                    <input type="checkbox" id="set-strict-window" class="w-5 h-5 accent-purple-600 mt-0.5 cursor-pointer" onchange="toggleStrictWindowUI()"> 
+                                    <span><i class="ph ph-lock-key text-lg"></i> Kunci Otomatis (Strict Windowing)</span>
                                 </label>
-                                <p class="text-[10px] text-purple-700 mt-1 ml-6">Jika diaktifkan, tombol kamera absen hanya bisa ditekan pada rentang menit yang diizinkan (lihat pengaturan per unit di bawah).</p>
+                                <p class="text-[10px] text-purple-700 ml-7 leading-snug">Fitur anti-curang. Jika diaktifkan, tombol pemindai kamera <b>hanya bisa diklik</b> pada rentang menit yang diizinkan (lihat pengaturan "Buka/Tutup Jendela" di bawah). Guru tidak akan bisa absen subuh hari atau tengah malam.</p>
                             </div>
 
                             <!-- PENGATURAN TOLERANSI & WINDOW PER UNIT (MENGGUNAKAN GRID) -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 
                                 <!-- Kolom Setting Unit SD -->
-                                <div class="border border-blue-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                                <div class="border border-blue-200 rounded-lg bg-white overflow-hidden shadow-sm transition hover:shadow-md">
                                     <div class="bg-blue-600 text-white font-bold text-xs p-2 text-center uppercase tracking-widest"><i class="ph ph-sun"></i> Parameter Unit SD</div>
                                     <div class="p-3 space-y-3">
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Hadir Awal (Menit)</label>
-                                            <input type="number" id="set-piket-early-SD" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-blue-800">Toleransi Piket Hadir Awal (Menit)</label>
+                                            <input type="number" id="set-piket-early-SD" class="w-full border border-blue-200 rounded p-1.5 text-sm bg-blue-50 outline-none text-center font-bold text-blue-900 mt-1" value="15">
                                         </div>
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Pulang Akhir (Menit)</label>
-                                            <input type="number" id="set-piket-late-SD" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-blue-800">Toleransi Piket Pulang Akhir (Menit)</label>
+                                            <input type="number" id="set-piket-late-SD" class="w-full border border-blue-200 rounded p-1.5 text-sm bg-blue-50 outline-none text-center font-bold text-blue-900 mt-1" value="15">
                                         </div>
-                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded border border-purple-100 transition-opacity space-y-2">
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1">Strict Window (Masuk)</p>
+                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded-lg border border-purple-200 transition-opacity duration-300 space-y-2 shadow-inner">
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-right"></i> Strict Masuk</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-in-start-SD" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-in-end-SD" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-in-start-SD" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-in-end-SD" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2">Strict Window (Pulang)</p>
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-left"></i> Strict Pulang</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-out-start-SD" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-out-end-SD" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-out-start-SD" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-out-end-SD" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Kolom Setting Unit TPQ -->
-                                <div class="border border-orange-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                                <div class="border border-orange-200 rounded-lg bg-white overflow-hidden shadow-sm transition hover:shadow-md">
                                     <div class="bg-orange-600 text-white font-bold text-xs p-2 text-center uppercase tracking-widest"><i class="ph ph-moon"></i> Parameter Unit TPQ</div>
                                     <div class="p-3 space-y-3">
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Hadir Awal (Menit)</label>
-                                            <input type="number" id="set-piket-early-TPQ" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-orange-800">Toleransi Piket Hadir Awal (Menit)</label>
+                                            <input type="number" id="set-piket-early-TPQ" class="w-full border border-orange-200 rounded p-1.5 text-sm bg-orange-50 outline-none text-center font-bold text-orange-900 mt-1" value="15">
                                         </div>
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Pulang Akhir (Menit)</label>
-                                            <input type="number" id="set-piket-late-TPQ" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-orange-800">Toleransi Piket Pulang Akhir (Menit)</label>
+                                            <input type="number" id="set-piket-late-TPQ" class="w-full border border-orange-200 rounded p-1.5 text-sm bg-orange-50 outline-none text-center font-bold text-orange-900 mt-1" value="15">
                                         </div>
-                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded border border-purple-100 transition-opacity space-y-2">
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1">Strict Window (Masuk)</p>
+                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded-lg border border-purple-200 transition-opacity duration-300 space-y-2 shadow-inner">
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-right"></i> Strict Masuk</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-in-start-TPQ" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-in-end-TPQ" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-in-start-TPQ" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-in-end-TPQ" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2">Strict Window (Pulang)</p>
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-left"></i> Strict Pulang</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-out-start-TPQ" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-out-end-TPQ" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-out-start-TPQ" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-out-end-TPQ" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Kolom Setting Unit Tahfiz -->
-                                <div class="border border-emerald-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                                <div class="border border-emerald-200 rounded-lg bg-white overflow-hidden shadow-sm transition hover:shadow-md">
                                     <div class="bg-emerald-600 text-white font-bold text-xs p-2 text-center uppercase tracking-widest"><i class="ph ph-book-open"></i> Parameter Unit Tahfiz</div>
                                     <div class="p-3 space-y-3">
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Hadir Awal (Menit)</label>
-                                            <input type="number" id="set-piket-early-Tahfiz" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-emerald-800">Toleransi Piket Hadir Awal (Menit)</label>
+                                            <input type="number" id="set-piket-early-Tahfiz" class="w-full border border-emerald-200 rounded p-1.5 text-sm bg-emerald-50 outline-none text-center font-bold text-emerald-900 mt-1" value="15">
                                         </div>
                                         <div>
-                                            <label class="text-[10px] font-bold text-gray-700">Toleransi Piket Pulang Akhir (Menit)</label>
-                                            <input type="number" id="set-piket-late-Tahfiz" class="w-full border rounded p-1.5 text-sm bg-gray-50 outline-none" value="15">
+                                            <label class="text-[9px] font-bold text-emerald-800">Toleransi Piket Pulang Akhir (Menit)</label>
+                                            <input type="number" id="set-piket-late-Tahfiz" class="w-full border border-emerald-200 rounded p-1.5 text-sm bg-emerald-50 outline-none text-center font-bold text-emerald-900 mt-1" value="15">
                                         </div>
-                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded border border-purple-100 transition-opacity space-y-2">
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1">Strict Window (Masuk)</p>
+                                        <div class="container-strict-inputs p-2 bg-purple-50 rounded-lg border border-purple-200 transition-opacity duration-300 space-y-2 shadow-inner">
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-right"></i> Strict Masuk</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-in-start-Tahfiz" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-in-end-Tahfiz" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-in-start-Tahfiz" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-in-end-Tahfiz" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
-                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2">Strict Window (Pulang)</p>
+                                            <p class="text-[9px] font-bold text-purple-800 text-center border-b border-purple-200 pb-1 mt-2 flex items-center justify-center gap-1"><i class="ph ph-arrow-circle-left"></i> Strict Pulang</p>
                                             <div class="flex gap-2">
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Buka Sblm (mnt)</label><input type="number" id="set-win-out-start-Tahfiz" class="w-full border rounded p-1 text-xs"></div>
-                                                <div class="flex-1"><label class="text-[8px] text-gray-600">Tutup Stlh (mnt)</label><input type="number" id="set-win-out-end-Tahfiz" class="w-full border rounded p-1 text-xs"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Buka Sejak<br>(Mnt Sblm)</label><input type="number" id="set-win-out-start-Tahfiz" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
+                                                <div class="flex-1"><label class="text-[8px] text-purple-600 block text-center leading-tight mb-1">Tutup Setelah<br>(Mnt Lewat)</label><input type="number" id="set-win-out-end-Tahfiz" class="w-full border border-purple-300 rounded p-1 text-xs text-center outline-none bg-white"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -455,23 +488,25 @@
                             </div>
                             
                             <!-- Master Jam Shift Harian (Dynamic Gen) -->
-                            <h4 class="font-bold text-sm border-t pt-4 mt-4"><i class="ph ph-calendar"></i> Master Jam Shift Harian</h4>
+                            <h4 class="font-bold text-sm border-t pt-4 mt-4 text-blue-700 flex items-center gap-2"><i class="ph ph-calendar"></i> Pengaturan Master Jam Shift Harian</h4>
+                            <p class="text-[10px] text-gray-500 mb-2 leading-tight">Ini adalah jam absolut batas keterlambatan harian (M = Masuk, P = Pulang). Kosongkan jika unit libur di hari tersebut.</p>
                             <div id="daily-times-container" class="space-y-3 mt-2"></div>
                             
-                            <button type="submit" class="w-full bg-black text-white p-3 rounded-lg text-sm font-medium mt-4 shadow hover:bg-gray-800 transition">Simpan Semua Parameter Waktu</button>
+                            <button type="submit" class="w-full bg-blue-700 text-white p-3 rounded-lg text-sm font-bold mt-4 shadow-lg hover:bg-blue-800 transition">Simpan Semua Parameter Waktu & Dispensi</button>
                         </form>
                     </div>
 
                     <!-- Form 3: Pengaturan GPS Area -->
-                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-1 flex items-center gap-2"><i class="ph ph-map-pin-line text-xl text-green-600"></i> Geofencing GPS Sekolah</h3>
+                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
+                        <h3 class="font-bold mb-1 flex items-center gap-2 text-green-700"><i class="ph ph-map-pin-line text-2xl"></i> Geofencing Sinyal GPS Sekolah</h3>
+                        <p class="text-[10px] text-gray-500 mb-3">Kunci area radar sekolah agar tombol absen hanya terbuka saat guru berada di lingkungan sekolah.</p>
                         <form id="form-settings-geo" class="space-y-3 mt-3">
-                            <div><label class="text-xs font-medium">Latitude (Garis Lintang)</label><input type="text" id="set-lat" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
-                            <div><label class="text-xs font-medium">Longitude (Garis Bujur)</label><input type="text" id="set-lng" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
-                            <div><label class="text-xs font-medium">Radius Toleransi (Meter)</label><input type="number" id="set-radius" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
+                            <div><label class="text-xs font-bold text-gray-700">Latitude (Garis Lintang)</label><input type="text" id="set-lat" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
+                            <div><label class="text-xs font-bold text-gray-700">Longitude (Garis Bujur)</label><input type="text" id="set-lng" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
+                            <div><label class="text-xs font-bold text-gray-700">Radius Toleransi (Meter)</label><input type="number" id="set-radius" class="w-full border rounded p-2 bg-gray-50 outline-none"></div>
                             <div class="flex gap-2">
-                                <button type="button" onclick="getCurrentLocationForSettings()" class="flex-1 bg-gray-100 border border-gray-300 p-2 rounded text-xs font-medium hover:bg-gray-200"><i class="ph ph-crosshair"></i> Lock Posisi Saya Saat Ini</button>
-                                <button type="submit" class="flex-1 bg-black text-white p-2 rounded text-xs font-medium shadow hover:bg-gray-800">Simpan Titik GPS</button>
+                                <button type="button" onclick="getCurrentLocationForSettings()" class="flex-1 bg-green-50 text-green-700 border border-green-200 p-2 rounded text-xs font-bold hover:bg-green-100 transition shadow-sm flex justify-center items-center gap-1"><i class="ph ph-crosshair"></i> Kunci Posisi Saya Saat Ini</button>
+                                <button type="submit" class="flex-1 bg-green-700 text-white p-2 rounded text-xs font-bold shadow hover:bg-green-800 transition flex justify-center items-center gap-1"><i class="ph ph-floppy-disk"></i> Simpan Titik Radar GPS</button>
                             </div>
                         </form>
                     </div>
@@ -481,22 +516,49 @@
 
         <!-- ================= BAGIAN MODAL-MODAL (POPUP DI ATAS LAYAR) ================= -->
         
+        <!-- Modal Pendaftaran Wajah (Face Recognition Enrollment) -->
+        <div id="modal-register-face" class="fixed inset-0 bg-black bg-opacity-95 z-[60] hidden flex-col items-center justify-center p-4">
+            <div class="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
+                <div class="bg-red-600 text-white p-4 flex justify-between items-center shadow"><h3 class="font-bold flex items-center gap-2"><i class="ph ph-scan text-xl"></i> Perekaman Wajah AI</h3><button onclick="closeModal('modal-register-face')" class="text-white hover:text-red-200"><i class="ph ph-x text-xl"></i></button></div>
+                
+                <!-- Kotak Info / Instruksi -->
+                <div class="p-4 bg-red-50 border-b border-red-100 text-center">
+                    <p class="text-xs text-red-800 font-medium leading-tight">Mohon posisikan wajah Anda tegak lurus menatap kamera dengan pencahayaan yang cukup. Jangan memakai masker atau kacamata gelap.</p>
+                </div>
+
+                <div class="relative bg-black w-full aspect-[3/4] flex items-center justify-center overflow-hidden">
+                    <video id="reg-camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
+                    <canvas id="reg-face-canvas"></canvas> <!-- Canvas utk menggambar kotak deteksi di wajah -->
+                    <div class="scan-overlay"></div> 
+                    
+                    <div class="absolute bottom-4 bg-black bg-opacity-80 text-white text-xs px-4 py-2 rounded-lg flex flex-col items-center max-w-[80%] text-center border border-gray-700 backdrop-blur-sm">
+                        <span id="reg-status-text" class="font-bold"><i class="ph ph-spinner-gap animate-spin"></i> Mencari wajah...</span>
+                    </div>
+                </div>
+                <div class="p-5 text-center">
+                    <button id="btn-save-face" onclick="simpanRekamanWajah()" disabled class="w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2 transition-colors">Menunggu Pengenalan Wajah...</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Kamera Pemindai Absen -->
         <div id="modal-absen" class="fixed inset-0 bg-black bg-opacity-95 z-50 hidden flex-col items-center justify-center p-4">
             <div class="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col">
-                <div class="bg-black text-white p-4 flex justify-between items-center"><h3 class="font-bold">Verifikasi Identitas <span id="lbl-absen-shift"></span></h3><button onclick="closeModal('modal-absen')" class="text-gray-300 hover:text-white"><i class="ph ph-x text-xl"></i></button></div>
+                <div class="bg-black text-white p-4 flex justify-between items-center"><h3 class="font-bold">Pemindai AI <span id="lbl-absen-shift"></span></h3><button onclick="closeModal('modal-absen')" class="text-gray-300 hover:text-white"><i class="ph ph-x text-xl"></i></button></div>
                 <div class="relative bg-black w-full aspect-[3/4] flex items-center justify-center overflow-hidden">
                     <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
-                    <!-- Animasi scanner garis hijau -->
+                    <canvas id="face-canvas"></canvas> <!-- Canvas Bounding Box (Kecerdasan Buatan) -->
                     <div class="scan-overlay"></div> 
-                    <!-- Kotak info status sinyal GPS -->
-                    <div id="geo-status-container" class="absolute bottom-4 bg-black bg-opacity-80 text-white text-xs px-3 py-2 rounded-lg flex flex-col items-center max-w-[80%] text-center border border-gray-700 backdrop-blur-sm">
-                        <span id="geo-status"><i class="ph ph-spinner-gap animate-spin"></i> Cek Sinyal GPS...</span>
+                    
+                    <!-- Kotak info status sinyal GPS & Face Recog -->
+                    <div id="geo-status-container" class="absolute bottom-4 bg-black bg-opacity-80 text-white text-xs px-3 py-2 rounded-lg flex flex-col items-center max-w-[80%] text-center border border-gray-700 backdrop-blur-sm shadow-xl">
+                        <span id="geo-status" class="mb-1 border-b border-gray-600 pb-1 w-full"><i class="ph ph-spinner-gap animate-spin"></i> Cek Sinyal GPS...</span>
+                        <span id="face-rec-status" class="font-bold text-yellow-400"><i class="ph ph-eye-slash"></i> Analisis Wajah...</span>
                         <span id="geo-distance" class="text-[10px] text-gray-400 mt-1 hidden"></span>
                         <span id="geo-accuracy" class="text-[9px] text-gray-500 mt-0.5 hidden"></span>
                     </div>
                 </div>
-                <div class="p-5 text-center"><button id="btn-capture-absen" onclick="processAbsen()" disabled class="w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2 transition-colors"><i class="ph ph-scan text-xl"></i> Pindai Lokasi</button></div>
+                <div class="p-5 text-center"><button id="btn-capture-absen" onclick="processAbsen()" disabled class="w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2 transition-colors"><i class="ph ph-scan text-xl"></i> Sistem Terkunci (Cek Syarat)</button></div>
             </div>
         </div>
 
@@ -518,6 +580,7 @@
                 <h3 class="font-bold text-lg mb-4 border-b pb-2">Profil Karyawan</h3>
                 <form id="form-user" class="space-y-3">
                     <input type="hidden" id="user-id">
+                    <input type="hidden" id="user-face-data"> <!-- Field penyimpan Face Data -->
                     <div><label class="text-xs font-medium">Kategori Role</label><select id="user-role" class="w-full border rounded p-2 mt-1 bg-gray-50 outline-none" onchange="toggleUserRoleFields()"><option value="guru">Guru Pendidik</option><option value="tendik">Staff Tendik</option></select></div>
                     <div id="user-jabatan-area" class="hidden"><label class="text-xs font-medium text-orange-600">Jabatan Tendik (Manual)</label><input type="text" id="user-jabatan" placeholder="Cth: Operator, Satpam, TU..." class="w-full border border-orange-200 rounded p-2 mt-1 outline-none"></div>
                     <div><label class="text-xs font-medium">Nama Lengkap</label><input type="text" id="user-nama" required class="w-full border rounded p-2 mt-1 outline-none"></div>
@@ -538,6 +601,12 @@
                         <div class="flex items-center mb-2 bg-gray-50 p-2 border rounded"><input type="checkbox" id="user-sub-all" value="ALL" class="mr-2 accent-black" onchange="toggleAllSubjects(this)"><label class="text-xs font-bold text-blue-600 cursor-pointer" for="user-sub-all">Guru Kelas Utama (Bisa Semua Mapel)</label></div>
                         <div id="user-subjects-container" class="grid grid-cols-2 gap-2 text-xs border p-2 rounded max-h-32 overflow-y-auto bg-white shadow-inner"></div>
                     </div>
+                    <!-- Fitur Admin untuk Mereset Wajah Guru -->
+                    <div id="admin-face-reset-area" class="pt-2 border-t mt-2 hidden">
+                        <p class="text-[10px] font-bold text-red-600 mb-1">Data Biometrik Wajah</p>
+                        <button type="button" onclick="hapusWajahUser()" class="w-full bg-red-50 border border-red-200 text-red-700 py-1.5 rounded text-[10px] font-bold hover:bg-red-100"><i class="ph ph-trash"></i> Hapus Rekaman Wajah (Reset)</button>
+                    </div>
+
                     <div class="flex gap-2 pt-3"><button type="button" onclick="closeModal('modal-add-user')" class="flex-1 bg-gray-200 py-2 rounded text-sm hover:bg-gray-300 transition">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded text-sm hover:bg-gray-800 transition shadow">Simpan Data</button></div>
                 </form>
             </div>
@@ -572,8 +641,37 @@
         <!-- Modal Pilih Piket Manual -->
         <div id="modal-add-piket" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl"><h3 class="font-bold mb-4 border-b pb-2">Penugasan Piket Manual</h3><form id="form-piket" class="space-y-3"><input type="hidden" id="piket-id"><div><label class="text-xs font-medium">Hari Aktif</label><input type="text" id="piket-hari-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 text-gray-500 font-bold"></div><div><label class="text-xs font-medium">Unit (Shift)</label><input type="text" id="piket-shift-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 text-gray-500 font-bold"></div><div><label class="text-xs font-medium text-blue-600">Pilih Guru</label><select id="piket-guru" required class="w-full border rounded p-2 mt-1 outline-none"></select></div><div class="flex gap-2 pt-3"><button type="button" onclick="closeModal('modal-add-piket')" class="flex-1 bg-gray-200 py-2 rounded text-sm">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded text-sm shadow">Tugaskan</button></div></form></div></div>
         
-        <!-- Modal Sisip Jadwal Manual -->
-        <div id="modal-add-jadwal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto shadow-2xl"><h3 class="font-bold border-b pb-2">Jadwal Manual</h3><form id="form-jadwal" class="space-y-3 mt-3"><input type="hidden" id="jadwal-id"><div><label class="text-[10px] font-bold">Kelas</label><input type="text" id="jadwal-kelas-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 font-bold text-gray-500"></div><div><label class="text-[10px] font-bold text-blue-600">Pilih Mapel</label><select id="jadwal-mapel" required class="w-full border rounded p-2 mt-1 outline-none"></select></div><div><label class="text-[10px] font-bold text-blue-600">Pilih Guru</label><select id="jadwal-guru" required class="w-full border rounded p-2 mt-1 outline-none"></select></div><div><label class="text-[10px] font-bold">Hari</label><select id="jadwal-hari" required class="w-full border rounded p-2 mt-1 outline-none"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option></select></div><div class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold">Jam Mulai</label><input type="time" id="jadwal-mulai" required class="w-full border rounded p-2 mt-1 outline-none"></div><div><label class="text-[10px] font-bold">Jam Selesai</label><input type="time" id="jadwal-selesai" required class="w-full border rounded p-2 mt-1 outline-none"></div></div><div><label class="text-[10px] font-bold">Catatan Pendek</label><input type="text" id="jadwal-ket" class="w-full border rounded p-2 mt-1 outline-none" placeholder="Opsional..."></div><div class="flex gap-2 pt-3"><button type="button" onclick="closeModal('modal-add-jadwal')" class="flex-1 bg-gray-200 py-2 rounded text-sm hover:bg-gray-300">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded text-sm shadow">Simpan</button></div></form></div></div>
+        <!-- Modal Sisip Jadwal Manual (Telah diperbarui fiturnya) -->
+        <div id="modal-add-jadwal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+                <h3 class="font-bold border-b pb-2 text-blue-700 flex items-center gap-1"><i class="ph ph-calendar-plus text-xl"></i> Sisip Jadwal Manual</h3>
+                <form id="form-jadwal" class="space-y-3 mt-3">
+                    <input type="hidden" id="jadwal-id">
+                    <div><label class="text-[10px] font-bold text-gray-600">Kelas Terpilih</label><input type="text" id="jadwal-kelas-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 font-bold text-gray-700 border-gray-300"></div>
+                    <div><label class="text-[10px] font-bold text-blue-700">Pilih Mata Pelajaran</label><select id="jadwal-mapel" required class="w-full border border-blue-200 rounded p-2 mt-1 outline-none font-medium"></select></div>
+                    <div><label class="text-[10px] font-bold text-blue-700">Tugaskan Kepada (Guru)</label><select id="jadwal-guru" required class="w-full border border-blue-200 rounded p-2 mt-1 outline-none font-medium"></select></div>
+                    <div><label class="text-[10px] font-bold text-gray-600">Hari Mengajar</label><select id="jadwal-hari" required class="w-full border rounded p-2 mt-1 outline-none bg-white"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option></select></div>
+                    <div class="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded border border-gray-200 shadow-inner">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-700">Jam Mulai</label>
+                            <input type="time" id="jadwal-mulai" required class="w-full border rounded p-2 mt-1 outline-none text-sm font-bold bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-700">Jam Selesai</label>
+                            <input type="time" id="jadwal-selesai" required class="w-full border rounded p-2 mt-1 outline-none text-sm font-bold bg-white text-blue-700">
+                            <!-- Tombol Cepat Penambah Waktu Otomatis -->
+                            <div class="flex gap-1 mt-1.5 justify-end">
+                                <button type="button" onclick="autoCalcTime(30)" class="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-1 rounded shadow-sm hover:bg-blue-200 transition">+30m</button>
+                                <button type="button" onclick="autoCalcTime(40)" class="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-1 rounded shadow-sm hover:bg-blue-200 transition">+40m</button>
+                                <button type="button" onclick="autoCalcTime(45)" class="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-1 rounded shadow-sm hover:bg-blue-200 transition">+45m</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-gray-600">Catatan/Keterangan Pendek</label><input type="text" id="jadwal-ket" class="w-full border rounded p-2 mt-1 outline-none text-sm" placeholder="Opsional (Cth: Kelas Pengganti)..."></div>
+                    <div class="flex gap-2 pt-3 mt-2 border-t border-gray-200"><button type="button" onclick="closeModal('modal-add-jadwal')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition text-gray-700">Batal</button><button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-800 transition">Kunci Jadwal</button></div>
+                </form>
+            </div>
+        </div>
         
         <!-- Modal Form Pengajuan Izin -->
         <div id="modal-ajukan-izin" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto"><h3 class="font-bold mb-4 border-b pb-2"><i class="ph ph-envelope-open text-xl"></i> Form Pengajuan Izin/Cuti</h3><form id="form-izin" class="space-y-4"><div class="bg-gray-50 p-2 rounded border border-gray-200"><label class="text-[10px] font-bold block mb-2">Tipe Durasi Izin</label><div class="flex gap-3 text-sm"><label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="izinTipe" value="Full" checked onchange="toggleIzinTipe()" class="accent-black"> Sehari/Lebih (Full)</label><label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="izinTipe" value="Parsial" onchange="toggleIzinTipe()" class="accent-black"> Parsial (Beberapa Jam)</label></div></div><div id="izin-container-full" class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold">Tanggal Mulai</label><input type="date" id="izin-start-date" required class="w-full border rounded p-2 mt-1 bg-white outline-none"></div><div><label class="text-[10px] font-bold">Tanggal Selesai</label><input type="date" id="izin-end-date" required class="w-full border rounded p-2 mt-1 bg-white outline-none"></div></div><div id="izin-container-parsial" class="hidden space-y-3"><div><label class="text-[10px] font-bold">Tanggal Izin</label><input type="date" id="izin-single-date" class="w-full border rounded p-2 mt-1 bg-white outline-none"></div><div class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold">Dari Jam</label><input type="time" id="izin-start-time" class="w-full border rounded p-2 mt-1 outline-none"></div><div><label class="text-[10px] font-bold">Sampai Jam</label><input type="time" id="izin-end-time" class="w-full border rounded p-2 mt-1 outline-none"></div></div></div><div><label class="text-[10px] font-bold">Alasan Lengkap</label><textarea id="izin-alasan" rows="3" required class="w-full border rounded p-2 mt-1 resize-none outline-none" placeholder="Tuliskan detail alasan..."></textarea></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal('modal-ajukan-izin')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm transition hover:bg-gray-300">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded-lg text-sm shadow transition hover:bg-gray-800">Kirim Pengajuan</button></div></form></div></div>
@@ -589,10 +687,10 @@
     
     <script>
         // ================= BAGIAN PENGATURAN KONEKSI DATABASE =================
-        // Masukkan URL Web App Google Apps Script Anda di sini.
+        // Masukkan URL Web App Google Apps Script Anda di sini (Pastikan diakhiri /exec).
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyNtcaWQbL95Y7b2GvcQkhCIUOgl_IoRA3CwMNWAHNyaXq-lZFjUdEInnMdXVC-afR8YQ/exec';
         // Kunci penyimpanan lokal di browser HP pengguna (berperan sebagai cache)
-        const DB_KEY = 'tafdhil_ultimate_db_v8';
+        const DB_KEY = 'tafdhil_ultimate_db_v9';
 
         // Variabel global tempat menampung seluruh data dari server
         let db = {
@@ -613,36 +711,57 @@
         let videoStream = null; // Menampung aliran video kamera saat memindai
         let tempLocation = null; // Menyimpan koordinat GPS sementara saat kamera dibuka
         let currentTargetShift = 'SD'; // Menentukan tombol absen mana yang sedang diklik user
-        let knownPendingIzinIds = []; // Mengingat ID izin yang sudah muncul, agar bel tidak bunyi terus-menerus
-        const HARI_ARRAY = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']; // Array pemetaan hari (Javascript mulai 0 = Minggu)
+        let knownPendingIzinIds = []; // Mengingat ID izin yang sudah muncul
+        const HARI_ARRAY = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        // Variabel Status Face API
+        let faceModelsLoaded = false;
+        let faceDetectInterval; // Interval pendeteksi wajah di background loop
+        let pendingFaceDescriptor = null; // Menyimpan Float32Array vektor wajah saat mendaftar
+        let faceMatchSuccess = false; // Menyimpan boolean true jika wajah cocok saat absen
 
         // ================= FUNGSI INISIALISASI (DIPANGGIL SAAT HALAMAN DIMUAT) =================
         async function initApp() {
-            // 1. Cek dan muat data terakhir yang ada di penyimpanan browser (agar tidak loading kosong dari 0)
+            // 1. Cek dan muat data terakhir yang ada di penyimpanan browser
             const stored = localStorage.getItem(DB_KEY);
             if (stored) db = { ...db, ...JSON.parse(stored) }; 
             
-            // 2. Beri aksi (event listener) pada toggle 'Wajib Absen' di menu pengaturan admin agar animasi opacitynya interaktif
+            // 2. Load Model Kecerdasan Buatan (Face-API) Terlebih Dahulu dari CDN Eksternal Github
+            try {
+                // Menggunakan model 'tinyFaceDetector' yang sangat ringan untuk Mobile/HP Browser.
+                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+                document.getElementById('loading-text').innerText = "Mengunduh Model Otak AI (3MB)...";
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                document.getElementById('loading-text').innerText = "Membangun Jaringan Syaraf AI...";
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                document.getElementById('loading-text').innerText = "Menyelaraskan Pengenalan Wajah...";
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                faceModelsLoaded = true;
+                console.log("Mesin Face Recognition Siap Digunakan.");
+            } catch (err) {
+                console.error("Gagal memuat Model Face API", err);
+                alert("Kesalahan Sistem: Tidak dapat memuat model Kecerdasan Buatan. Pastikan Anda memiliki koneksi internet yang stabil.");
+            }
+
+            // 3. Beri aksi pada toggle 'Wajib Absen' di menu pengaturan admin agar animasi opacitynya interaktif
             document.getElementById('set-wajib-absen').addEventListener('change', function() {
                document.getElementById('container-mode-absen').style.opacity = this.checked ? '1' : '0.5';
                document.getElementById('set-mode-absen').disabled = !this.checked;
             });
 
-            // 3. Cek apakah ada sesi login (Orang yang sebelumnya belum logout)
+            // 4. Cek apakah ada sesi login
             const session = localStorage.getItem('tafdhil_session');
-            if (session) { currentUser = JSON.parse(session); routeUser(); } else navTo('login'); // Jika tidak ada lempar ke form login
+            if (session) { currentUser = JSON.parse(session); routeUser(); } else navTo('login'); 
             
-            // 4. Lakukan sinkronisasi tarikan data dari Server (Google Sheet)
+            // 5. Lakukan sinkronisasi tarikan data dari Server (Google Sheet)
             if (GAS_URL) {
+                document.getElementById('loading-text').innerText = "Sinkronisasi Database Cloud...";
                 await forceSync(true); // Tarik data diam-diam tanpa memblokir layar lama-lama
-                // Jika yang login adalah admin, catat izin-izin yang berstatus 'Pending' agar bisa tahu kalau ada notif baru masuk nanti
                 if(currentUser && currentUser.role === 'admin' && db.izin) knownPendingIzinIds = db.izin.filter(i => i.status === 'Pending').map(i => i.id);
-                
-                // Nyalakan interval (timer) untuk menarik data terbaru di latar belakang setiap 10 detik
+                // Nyalakan timer sinkronisasi per 10 detik
                 setInterval(() => { forceSync(true, true); }, 10000); 
-            } else saveDB(); // Jika tidak ada GAS URL, pakai database lokal (offline murni)
+            } else saveDB(); 
             
-            // 5. Jalankan jam waktu nyata (Real-time clock)
             setInterval(updateClock, 1000);
 
             // 6. Pasang "telinga" (Event Listener) pada semua tombol "Submit" di form-form modal
@@ -657,73 +776,61 @@
             document.getElementById('form-settings-absen').addEventListener('submit', saveSettingsAbsen);
             document.getElementById('form-settings-geo').addEventListener('submit', saveSettingsGeo);
             document.getElementById('form-config-roster').addEventListener('submit', saveConfigRoster);
+            
+            // Matikan loading akhir
+            document.getElementById('global-loading').classList.add('hidden');
         }
 
         // ================= FUNGSI SINKRONISASI DATA DARI SERVER (PULL) =================
         async function forceSync(isSilent = false, isBackground = false) {
-            if (!GAS_URL) return; // Jika tidak ada link GAS, lewati.
+            if (!GAS_URL) return;
             try {
-                // Munculkan indikator loading jika dibutuhkan
                 if (!isSilent) document.getElementById('global-loading').classList.remove('hidden');
                 if (!isBackground) document.getElementById('sync-indicator').classList.remove('hidden');
                 
-                // Minta data lewat metode GET ke URL Apps Script
                 const res = await fetch(GAS_URL + "?action=get_data"); 
-                const json = await res.json(); // Ubah respon jadi format Object JSON
+                const json = await res.json(); 
                 
                 if (json.status === 'success') {
-                    // Pembersihan format jam kotor (kadang G-Sheet mengirim tanggal di kolom jam, contoh '1899-12-30T07:30:00.000Z')
                     if (json.data.schedules) json.data.schedules.forEach(s => {
                         if (s.startTime && s.startTime.includes('T')) s.startTime = s.startTime.split('T')[1].substring(0, 5);
                         if (s.endTime && s.endTime.includes('T')) s.endTime = s.endTime.split('T')[1].substring(0, 5);
                     });
                     
-                    // Fitur Bunyikan Lonceng Notifikasi untuk Admin jika ada surat Izin baru masuk saat ia sedang buka aplikasi
                     if (isBackground && currentUser && currentUser.role === 'admin' && json.data.izin) {
                         const freshPendingIds = json.data.izin.filter(i => i.status === 'Pending').map(i => i.id);
-                        // Cek apakah ada ID pengajuan baru yang belum dikenal sebelumnya
                         const hasNewUnseenIzin = freshPendingIds.some(id => !knownPendingIzinIds.includes(id));
                         if (hasNewUnseenIzin) { 
-                            playNotificationSound(); // Bunyikan suara ting-tong!
+                            playNotificationSound(); 
                             showToast("🔔 Ada Pengajuan Izin Baru Masuk!"); 
-                            // Jika tab Izin kebetulan sedang dibuka Admin, render (segarkan) daftarnya secara paksa agar muncul
                             if (!document.getElementById('admin-izin').classList.contains('hidden')) { db = { ...db, ...json.data }; renderAdminIzin(); } 
                         }
-                        knownPendingIzinIds = freshPendingIds; // Ingat daftar ID izin terbaru
+                        knownPendingIzinIds = freshPendingIds; 
                     }
 
-                    // Gabungkan (Merge) data lama di memory dengan data baru tarikan dari server
                     db = { ...db, ...json.data };
                     
-                    // Nilai Perlindungan (Fallback) agar aplikasi tidak crash jika kunci pengaturan di Sheet kosong/dihapus tak sengaja
                     if(!db.settings.daily_times) db.settings.daily_times = "{}";
                     if(!db.settings.roster_config) db.settings.roster_config = "{}";
                     if(!db.settings.wajib_absen_kosong) db.settings.wajib_absen_kosong = 'false';
                     if(!db.settings.mode_absen_kosong) db.settings.mode_absen_kosong = 'shift';
                     if(!db.settings.strict_absen_window) db.settings.strict_absen_window = 'false';
                     
-                    // Simpan hasil rapi ini ke memory penyimpanan Browser (Local Storage)
                     saveDB(); 
-                    
-                    // Jika ini siklus sync manual pertama kali, arahkan / render ulang tampilan user
                     if(!isSilent && currentUser) routeUser(); 
                 }
             } catch (e) { 
-                // Jika fetch gagal (karena tak ada internet / error CORS)
-                if (!isSilent) showToast("Membuka Mode Offline. Tidak ada Jaringan/Gagal Koneksi."); 
+                if (!isSilent) showToast("Membuka Mode Offline. Tidak ada Jaringan."); 
             } finally { 
-                // Selalu tutup indikator loading apapun yang terjadi
                 document.getElementById('global-loading').classList.add('hidden'); 
                 document.getElementById('sync-indicator').classList.add('hidden'); 
             }
         }
 
-        // ================= FUNGSI MENGIRIM DATA KE SERVER (PUSH/POST) =================
         async function pushToBackend(action, payload) {
-            if (!GAS_URL) return; // Jika tidak ada URL server, cukup simpan lokal (sudah dilakukan pemanggil)
+            if (!GAS_URL) return;
             try { 
                 document.getElementById('sync-indicator').classList.remove('hidden'); 
-                // Lempar data (POST) berisi action (misal: 'save_absen') dan data (objek rekaman) ke Google Apps Script
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: action, data: payload }) }); 
             } 
             catch (e) { console.error("Gagal sinkron server:", e); } 
@@ -731,67 +838,46 @@
         }
 
         // ================= FUNGSI UTILITAS UMUM =================
-        // Menghasilkan bunyi Bip notifikasi sederhana bawaan browser (tanpa perlu file mp3)
         function playNotificationSound() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime); gain.gain.setValueAtTime(0.1, ctx.currentTime); osc.start(); osc.stop(ctx.currentTime + 0.2); setTimeout(() => { const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain(); osc2.connect(gain2); gain2.connect(ctx.destination); osc2.type = 'sine'; osc2.frequency.setValueAtTime(659.25, ctx.currentTime); gain2.gain.setValueAtTime(0.1, ctx.currentTime); osc2.start(); osc2.stop(ctx.currentTime + 0.4); }, 200); } catch(e) {} }
-        
-        // Memaksa menyimpan variabel `db` yang ada di memori RAM aplikasi ke `localStorage` Browser HP (Database permanen lokal)
         function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
-        
-        // Menampilkan pesan mengambang di atas layar (mirip peringatan Android)
         function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.remove('opacity-0', '-translate-y-4'), 10); setTimeout(() => { t.classList.add('opacity-0', '-translate-y-4'); setTimeout(() => t.classList.add('hidden'), 300); }, 4000); }
-        
-        // Fungsi pindah antar layar/view utama (menyembunyikan yang lain, memunculkan yang dituju)
         function navTo(v) { ['view-login', 'view-public', 'view-guru', 'view-admin'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById(`view-${v}`).classList.remove('hidden'); if (v === 'public') renderPublicBoard('hari_ini'); }
 
         // ================= FUNGSI PENGGAMBARAN JADWAL PUBLIK =================
         function renderPublicBoard(filter) {
-            // Warnai tombol pilihan Hari Ini atau Besok
             document.getElementById('btn-pub-hari_ini').className = filter === 'hari_ini' ? "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active" : "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600";
             document.getElementById('btn-pub-besok').className = filter === 'besok' ? "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active" : "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600";
 
             const listEl = document.getElementById('public-schedule-list'); listEl.innerHTML = '';
-            
-            // Hitung tanggal target yang diminta
             let targetDate = new Date(); if (filter === 'besok') targetDate.setDate(targetDate.getDate() + 1);
-            const hariTarget = HARI_ARRAY[targetDate.getDay()]; // Dapatkan nama harinya dalam Bahasa Indonesia
+            const hariTarget = HARI_ARRAY[targetDate.getDay()]; 
             
-            // Ubah teks judul tanggal di Header
             document.getElementById('public-date-display').innerText = targetDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-            // Saring jadwal yang hari belajarnya cocok dengan target
             const dayScheds = db.schedules.filter(s => s.day === hariTarget);
-            
-            // Jika kosong, tampilkan ikon kalender dengan keterangan libur
             if (dayScheds.length === 0) { listEl.innerHTML = '<div class="text-center py-10 mt-10"><i class="ph ph-calendar-check text-5xl text-gray-300 mb-2"></i><p class="text-gray-500 font-medium text-sm">Sekolah Libur.<br>Tidak ada kegiatan belajar mengajar.</p></div>'; return; }
 
-            // Kelompokkan jadwal per Kelas
             const grouped = {}; dayScheds.forEach(s => { if (!grouped[s.classId]) grouped[s.classId] = []; grouped[s.classId].push(s); });
 
-            // Cetak kartunya
             for (const classId in grouped) {
                 const kelasInfo = db.classes.find(c => c.id === classId); if(!kelasInfo) continue; 
                 
-                // Ubah tema warna judul kotak tergantung Shift-nya
                 let bgHeader = 'bg-blue-50', borderHeader = 'border-blue-100', textHeader = 'text-blue-900', bgBadge = 'bg-blue-200', textBadge = 'text-blue-800';
                 if (kelasInfo.shift === 'TPQ') { bgHeader='bg-orange-50'; borderHeader='border-orange-100'; textHeader='text-orange-900'; bgBadge='bg-orange-200'; textBadge='text-orange-800'; }
                 else if (kelasInfo.shift === 'Tahfiz') { bgHeader='bg-emerald-50'; borderHeader='border-emerald-100'; textHeader='text-emerald-900'; bgBadge='bg-emerald-200'; textBadge='text-emerald-800'; }
 
                 let html = `<div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden"><div class="${bgHeader} border-b ${borderHeader} px-4 py-2 flex justify-between items-center"><h3 class="font-bold ${textHeader}">${kelasInfo.name}</h3><span class="text-[10px] font-bold ${bgBadge} ${textBadge} px-2 py-0.5 rounded-full uppercase tracking-wider">${kelasInfo.shift || 'SD'}</span></div><div class="divide-y divide-gray-100 p-2">`;
                 
-                // Urutkan jam mengajar dari pagi ke siang
                 let scheds = grouped[classId].sort((a, b) => a.startTime.localeCompare(b.startTime));
                 
                 scheds.forEach(s => {
                     const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-                    
-                    // Cek apakah guru aslinya sedang izin DI TANGGAL ITU.
                     const izinTerkait = db.izin.find(i => {
                         if (i.userId !== s.teacherId || i.status !== 'Disetujui' || !i.substituteId) return false;
                         if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
                         return (i.startDate === dateStr);
                     });
                     
-                    // Modifikasi tampilan nama: Jika izin ada pengganti, cetak nama pengganti dengan label 'Inval'
                     let namaGuruHTML = `<i class="ph ph-chalkboard-teacher"></i> ${getTeacherName(s.teacherId)}`;
                     if(izinTerkait) namaGuruHTML = `<i class="ph ph-arrows-merge text-yellow-600"></i> <span class="text-yellow-700 font-bold bg-yellow-50 px-1 rounded border border-yellow-200">Inval: ${getTeacherName(izinTerkait.substituteId)}</span>`;
 
@@ -804,7 +890,6 @@
         // ================= FUNGSI-FUNGSI PENGATUR ALUR LOGIN DAN JAM =================
         function routeUser() { 
             if (!currentUser) return navTo('login'); 
-            // Segarkan profil currentUser barangkali ada namanya diedit admin saat disinkronisasi
             currentUser = db.users.find(u => u.id === currentUser.id) || currentUser; 
             if (currentUser.role === 'admin') { navTo('admin'); switchAdminTab('dashboard'); } 
             else { navTo('guru'); renderUserDashboard(); } 
@@ -812,25 +897,25 @@
 
         function updateClock() { const now = new Date(); const el = document.getElementById('current-time-guru'); if (el) el.innerText = now.toTimeString().slice(0, 5); const pDate = document.getElementById('public-date-display'); if (pDate) pDate.innerText = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
         
-        // Pembangkit String hari ini untuk fungsi filter (Contoh: "Jumat" & "2023-11-20")
         function getTodayName() { return HARI_ARRAY[new Date().getDay()]; } 
         function getTodayDateStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; } 
         
-        // Fungsi penterjemah ID menjadi nama asli (Untuk dirender di tabel)
         function getClassName(id) { const c = db.classes.find(x => x.id === id); return c ? `${c.name} (${c.shift})` : '<span class="text-red-500 line-through">Dihapus</span>'; }
         function getSubjectName(id) { const s = db.subjects.find(x => x.id === id); return s ? s.name : '<span class="text-red-500 line-through">Dihapus</span>'; }
         function getTeacherName(id) { const u = db.users.find(x => x.id === id); return u ? u.name : '<span class="text-red-500 line-through">Mantan</span>'; }
         
-        // Fungsi Buka Tutup Jendela Timbul (Modal Popup)
         function showModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); if (id === 'modal-absen') stopCamera(); try { document.getElementById(id.replace('modal-', 'form-')).reset(); } catch (e) { } }
+        function closeModal(id) { 
+            document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); 
+            if (id === 'modal-absen' || id === 'modal-register-face') stopCamera(); 
+            try { document.getElementById(id.replace('modal-', 'form-')).reset(); } catch (e) { } 
+        }
 
         function handleLogin(e) {
-            e.preventDefault(); // Jangan refresh pagenya
+            e.preventDefault();
             const u = document.getElementById('login-username').value.trim().toLowerCase();
             const p = document.getElementById('login-password').value.trim();
             
-            // Cocokkan input kotak username dengan field ID, Nama (huruf kecil semua), atau Username yang ada di database lokal
             const user = db.users.find(x => 
                 (String(x.username).toLowerCase() === u || String(x.name).toLowerCase() === u || String(x.id).toLowerCase() === u) && 
                 String(x.password) === p
@@ -838,7 +923,7 @@
             
             if (user) { 
                 currentUser = user; 
-                localStorage.setItem('tafdhil_session', JSON.stringify(user)); // Ingat sesi (Keep Me Logged in)
+                localStorage.setItem('tafdhil_session', JSON.stringify(user)); 
                 document.getElementById('login-form').reset(); 
                 showToast(`Akses Diterima...`); routeUser(); 
             } else showToast("Sistem menolak: Username/Nama/ID atau Sandi keliru!");
@@ -849,19 +934,27 @@
         function renderUserDashboard() {
             document.getElementById('guru-name').innerText = currentUser.name;
             const role = currentUser.role;
-            // Jika ia tendik, sapa dengan sebutan jabatannya. Jika tidak ada jabatan biarkan "Staff"
             document.getElementById('user-greeting').innerText = role === 'tendik' ? `Portal Tendik - ${currentUser.jabatan || 'Staff'},` : "Portal Pendidik,";
             
             const today = getTodayName(), dateStr = getTodayDateStr();
 
-            // Pengecekan Izin/Cuti Aktif HARI INI untuk menyembunyikan/menonaktifkan kewajiban tombol absen
+            // CEK REGISTRASI WAJAH GURU (Baru!)
+            const boxFaceAlert = document.getElementById('alert-face-register');
+            if (role !== 'admin') {
+                if (!currentUser.face_data || currentUser.face_data.length < 10) {
+                    boxFaceAlert.classList.remove('hidden'); // Munculkan tombol daftar wajah
+                } else {
+                    boxFaceAlert.classList.add('hidden'); // Sudah daftar, sembunyikan.
+                }
+            }
+
+            // Pengecekan Izin/Cuti Aktif HARI INI
             const izinAktifHariIni = db.izin.find(i => {
                 if (i.userId !== currentUser.id || i.status !== 'Disetujui') return false;
                 if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
                 return (i.startDate === dateStr);
             });
             
-            // Merender Peringatan Bahwa Ia Sedang Cuti Hari Ini
             const boxIzin = document.getElementById('status-izin-user');
             if (izinAktifHariIni) {
                 boxIzin.classList.remove('hidden');
@@ -869,11 +962,10 @@
                 else boxIzin.innerHTML = `<p class="font-bold mb-1 flex items-center gap-1"><i class="ph ph-clock text-orange-600 text-lg"></i> Status: IZIN PARSIAL HARI INI</p>Jam: <b>${izinAktifHariIni.startTime} - ${izinAktifHariIni.endTime}</b><br>Ket: "${izinAktifHariIni.reason}"`;
             } else boxIzin.classList.add('hidden');
 
-            // --- FITUR BARU: Menampilkan Notifikasi Keputusan Izin Terakhir (Baik Hari Ini Ataupun Kemarin) ---
-            const izinSaya = db.izin.filter(i => i.userId === currentUser.id).sort((a,b) => b.id.localeCompare(a.id)); // Ambil list izin miliknya, urutkan ID (timestamp) dari terbesar(terbaru)
+            const izinSaya = db.izin.filter(i => i.userId === currentUser.id).sort((a,b) => b.id.localeCompare(a.id)); 
             const notifBox = document.getElementById('notif-izin-user');
             if (izinSaya.length > 0) {
-                const izinTerbaru = izinSaya[0]; // Ambil elemen pertama (Paling Baru)
+                const izinTerbaru = izinSaya[0]; 
                 notifBox.classList.remove('hidden');
                 let statusText = '', bgColor = '', icon = '';
                 
@@ -892,7 +984,6 @@
             } else {
                 notifBox.classList.add('hidden');
             }
-            // -------------------------------------------------------------------------------------------------
 
             // Setup Pengenalan Variabel Antarmuka (Interface)
             const rosterEl = document.getElementById('section-roster-guru');
@@ -900,37 +991,28 @@
             const cTPQ = document.getElementById('card-absen-tpq');
             const cTahfiz = document.getElementById('card-absen-tahfiz');
             const cNo = document.getElementById('card-no-schedule');
+            const cOpsional = document.getElementById('card-opsional-info');
             const badgePiket = document.getElementById('guru-piket-badge');
 
-            // Reset UI Kartu-kartu menjadi Tersembunyi semua awalnya
-            [rosterEl, cSD, cTPQ, cTahfiz, cNo, badgePiket].forEach(el => el.classList.add('hidden'));
+            [rosterEl, cSD, cTPQ, cTahfiz, cNo, cOpsional, badgePiket].forEach(el => el.classList.add('hidden'));
 
-            // Mengumpulkan rekaman absensi si orang ini khusus HARI INI
             const records = db.attendance.filter(a => a.userId === currentUser.id && a.date === dateStr);
-            let hasSD = false, hasTPQ = false, hasTahfiz = false;
+            let hasSD = false, hasTPQ = false, hasTahfiz = false, isOpsionalOnly = false;
             
-            // Deteksi Unit yang dipilih admin pada saat buat akun. (Berbentuk array misal ['SD', 'Tahfiz'])
             const myUnits = currentUser.unit ? currentUser.unit.split(',') : [];
 
-            // KONDISI 1: JIKA DIA SEORANG TENDIK (TATA USAHA/SATPAM)
             if (role === 'tendik') {
-                // Tendik hanya memunculkan kartu unit sesuai dengan apa yang diceklis pada profil unitnya.
                 if (myUnits.includes('SD')) hasSD = true;
                 if (myUnits.includes('TPQ')) hasTPQ = true;
                 if (myUnits.includes('Tahfiz')) hasTahfiz = true;
             } 
-            // KONDISI 2: JIKA DIA GURU
             else {
-                // Munculkan wadah daftar mengajar miliknya khusus guru
                 rosterEl.classList.remove('hidden'); 
                 const fullListEl = document.getElementById('guru-full-schedule'); fullListEl.innerHTML = '';
 
-                // Menyusun daftar roster seminggu untuk digambar di bawah. (Dimulai dari senin, diputar sampai minggu)
                 HARI_ARRAY.slice(1).concat(HARI_ARRAY[0]).forEach(hari => {
-                    // Cari jadwal reguler milik guru ini
                     let dayScheds = db.schedules.filter(s => s.teacherId === currentUser.id && s.day === hari).map(s => ({ ...s, inval: false }));
                     
-                    // Kalau harinya adalah HARI INI, cek apakah dia disuruh Inval (Menggantikan) kelas guru lain yang cuti
                     if (hari === today) {
                         const invalForMe = db.izin.filter(i => {
                             if (i.substituteId !== currentUser.id || i.status !== 'Disetujui') return false;
@@ -938,7 +1020,6 @@
                             return (i.startDate === dateStr);
                         });
                         invalForMe.forEach(iz => {
-                            // Curi (Tampilkan) roster milik guru yang izin tersebut untuk ditempel ke jadwal orang pengganti (currentUser)
                             const izScheds = db.schedules.filter(s => s.teacherId === iz.userId && s.day === hari).map(s => ({ ...s, inval: true, originalOwner: iz.userId }));
                             dayScheds = dayScheds.concat(izScheds);
                         });
@@ -946,90 +1027,177 @@
                     
                     dayScheds.sort((a, b) => a.startTime.localeCompare(b.startTime));
                     dayScheds.forEach(s => {
-                        // Cari info apakah kelas ini SD, TPQ, dsb untuk menentukan kartu absen apa yang harus nongol HARI INI
                         const c = db.classes.find(x => x.id === s.classId); const unitSft = c ? (c.shift||'SD') : 'SD';
                         if (hari === today) { if(unitSft==='SD') hasSD=true; else if(unitSft==='TPQ') hasTPQ=true; else hasTahfiz=true; }
                         
-                        // Gambar Desain baris per mata pelajarannya di halaman roster
                         const badge = s.inval ? `<span class="bg-yellow-100 border border-yellow-300 text-yellow-700 text-[9px] px-1.5 py-0.5 rounded ml-1 shadow-sm"><i class="ph ph-arrows-merge"></i> Inval Mandat</span>` : '';
                         fullListEl.innerHTML += `<div class="bg-white border p-3 rounded-lg flex justify-between items-center mb-2 shadow-sm hover:border-gray-400 transition-colors"><div><p class="font-bold text-[9px] text-gray-500 uppercase tracking-widest">${hari} - ${unitSft}</p><p class="font-bold text-sm text-black leading-tight mt-0.5">${getSubjectName(s.subjectId)} ${badge}</p><p class="text-[10px] text-gray-500 mt-1"><i class="ph ph-chalkboard"></i> ${getClassName(s.classId)}</p></div><div class="text-xs font-mono font-bold bg-gray-50 border border-gray-200 px-2 py-1.5 rounded shadow-inner text-gray-700">${s.startTime} - ${s.endTime}</div></div>`;
                     });
                 });
 
-                // Cek penugasan Piket hari ini
                 const myPickets = db.pickets.filter(p => p.userId === currentUser.id && p.day === today);
                 myPickets.forEach(p => { if(p.shift === 'SD') hasSD = true; if(p.shift === 'TPQ') hasTPQ = true; if(p.shift === 'Tahfiz') hasTahfiz = true; });
                 if (myPickets.length > 0) badgePiket.classList.remove('hidden');
 
-                // Jika dia tidak ada roster dan tidak ada piket, artinya sedang "Off/Kosong"
+                // PERBAIKAN BUG No 2 (ABSEN OPSIONAL): Jika dia tidak ada roster dan piket (Off)
                 if (!hasSD && !hasTPQ && !hasTahfiz) {
-                    const isWajibAbsen = db.settings.wajib_absen_kosong === 'true'; // Cek pengaturan di panel admin
+                    const isWajibAbsen = db.settings.wajib_absen_kosong === 'true';
+                    
+                    // Terlepas dari dia wajib apel atau opsional sunnah, SISTEM HARUS SELALU memunculkan kartu absen berdasarkan profil (myUnits) nya!
+                    if (myUnits.includes('SD')) hasSD = true;
+                    if (myUnits.includes('TPQ')) hasTPQ = true;
+                    if (myUnits.includes('Tahfiz')) hasTahfiz = true;
+
                     if (isWajibAbsen) {
                         const mode = db.settings.mode_absen_kosong; 
-                        if (mode === 'pagi') { hasSD = true; } // Paksa wajib nongol absen SD (Apel Pagi)
-                        else {
-                            // Paksa muncul absen sesuai unit yang dicentang di profil gurunya
-                            if (myUnits.includes('SD')) hasSD = true;
-                            if (myUnits.includes('TPQ')) hasTPQ = true;
-                            if (myUnits.includes('Tahfiz')) hasTahfiz = true;
-                        }
+                        if (mode === 'pagi') { hasSD = true; } // Paksa absen pagi walo dia guru TPQ
                     } else { 
-                        // Jika bebas/tidak wajib absen, munculkan ikon libur
-                        cNo.classList.remove('hidden'); 
+                        // Jika bebas/tidak wajib absen, munculkan kartu info biru yang mengatakan absen opsional
+                        isOpsionalOnly = true;
+                        cOpsional.classList.remove('hidden'); 
                     }
                 }
             }
 
-            // Fungsi Pembantu Merakit Kotak (Kartu) Tombol Absen Kamera
             function setupCard(unitName, cardEl, inEl, outEl, badgeEl, colorClasses) {
-                cardEl.classList.remove('hidden'); // Tampakkan kartunya
-                const rec = records.find(r => r.shift === unitName); // Cari apakah sudah absen unit ini
+                cardEl.classList.remove('hidden'); 
+                const rec = records.find(r => r.shift === unitName); 
                 
                 document.getElementById(inEl).innerText = rec ? rec.timeIn : '--:--';
                 document.getElementById(outEl).innerText = (rec && rec.timeOut) ? rec.timeOut : '--:--';
                 
-                const b = document.getElementById(badgeEl); // Label Status Disiplin (Tepat/Telat)
-                if(!rec) { b.innerText="BELUM SCAN"; b.className=`px-2 py-1 rounded text-xs font-medium block ${colorClasses.empty}`; }
+                const b = document.getElementById(badgeEl);
+                if(!rec) { 
+                    b.innerText = isOpsionalOnly ? "TIDAK WAJIB" : "BELUM SCAN"; 
+                    b.className = `px-2 py-1 rounded text-xs font-medium block ${colorClasses.empty}`; 
+                }
                 else if(rec.disiplin==='Terlambat') { b.innerText="TERLAMBAT"; b.className="px-2 py-1 rounded bg-red-500 text-xs text-white font-bold block animate-pulse shadow-md"; }
                 else { b.innerText="TEPAT WAKTU"; b.className="px-2 py-1 rounded bg-green-500 text-xs text-white font-bold block shadow-md"; }
             }
 
-            // Jalankan perakitan visualisasi kartunya (hanya yang terpanggil true di kalkulasi atas)
             if (hasSD) setupCard('SD', cSD, 'in-sd', 'out-sd', 'badge-sd', {empty: 'bg-blue-950 text-blue-200 border border-blue-800'});
             if (hasTPQ) setupCard('TPQ', cTPQ, 'in-tpq', 'out-tpq', 'badge-tpq', {empty: 'bg-orange-900 text-orange-200 border border-orange-700'});
             if (hasTahfiz) setupCard('Tahfiz', cTahfiz, 'in-tahfiz', 'out-tahfiz', 'badge-tahfiz', {empty: 'bg-emerald-900 text-emerald-200 border border-emerald-700'});
             
-            // Jaring pengaman (Khusus Tendik yang tidak mencentang unit manapun di profilnya)
+            // Jaring pengaman mutlak (Tendik tanpa profil unit yg dipilih)
             if (role === 'tendik' && !hasSD && !hasTPQ && !hasTahfiz) cNo.classList.remove('hidden');
         }
 
-        // ================= FUNGSI BUKA KAMERA & CEK GPS =================
+        // ================= FITUR BARU: REGISTRASI WAJAH AI =================
+        async function openFaceRegistrationModal() {
+            if (!faceModelsLoaded) return alert("Model Kecerdasan Buatan belum selesai dimuat. Tunggu sebentar lagi atau pastikan internet Anda stabil.");
+            showModal('modal-register-face');
+            
+            const btnSave = document.getElementById('btn-save-face');
+            const statusText = document.getElementById('reg-status-text');
+            btnSave.disabled = true; pendingFaceDescriptor = null;
+            btnSave.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2 transition-colors";
+            
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
+                const videoEl = document.getElementById('reg-camera-feed');
+                videoEl.srcObject = videoStream; 
+
+                // Event listener saat video mulai dimainkan
+                videoEl.onplay = () => {
+                    const canvas = document.getElementById('reg-face-canvas');
+                    const displaySize = { width: videoEl.clientWidth, height: videoEl.clientHeight };
+                    faceapi.matchDimensions(canvas, displaySize);
+
+                    // Looping 500ms untuk scan wajah
+                    faceDetectInterval = setInterval(async () => {
+                        // Scan AI...
+                        const detection = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                        
+                        // Bersihkan lukisan canvas setiap frame
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        if (detection) {
+                            // Gambar kotak deteksi (Bounding Box) di wajah
+                            const resizedDetections = faceapi.resizeResults(detection, displaySize);
+                            faceapi.draw.drawDetections(canvas, resizedDetections);
+                            
+                            statusText.innerHTML = '<i class="ph ph-check-circle text-green-400"></i> Wajah Terdeteksi dengan Jelas!';
+                            pendingFaceDescriptor = detection.descriptor; // Simpan 128 Deret angka geometri wajah
+                            
+                            // Nyalakan tombol Simpan
+                            btnSave.disabled = false;
+                            btnSave.innerText = "Kunci & Simpan Wajah Ini";
+                            btnSave.className = "w-full bg-green-600 text-white font-bold rounded-xl py-3 shadow-lg hover:bg-green-700 transition flex justify-center items-center gap-2";
+                        } else {
+                            statusText.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i> Mencari Wajah... Jangan goyang.';
+                            btnSave.disabled = true; btnSave.innerText = "Menunggu Pengenalan Wajah...";
+                            btnSave.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 shadow flex justify-center items-center gap-2 transition-colors";
+                        }
+                    }, 500);
+                };
+            } catch (err) {
+                alert("Gagal membuka kamera: " + err.message);
+                closeModal('modal-register-face');
+            }
+        }
+
+        function simpanRekamanWajah() {
+            if (!pendingFaceDescriptor) return;
+            // Konversi tipe data unik Float32Array milik FaceAPI menjadi format array JSON biasa agar bisa disave di server
+            const descArray = Array.from(pendingFaceDescriptor);
+            const strFaceData = JSON.stringify(descArray);
+
+            // Update ke objek currentUser
+            currentUser.face_data = strFaceData;
+            
+            // Simpan juga ke Database Utama kita (Sync backend)
+            const uIdx = db.users.findIndex(u => u.id === currentUser.id);
+            if (uIdx > -1) {
+                db.users[uIdx].face_data = strFaceData;
+                saveDB();
+                pushToBackend('save_user', db.users[uIdx]); // Mengirim objek user kembali ke server untuk menimpa
+                
+                showToast("Berhasil! Wajah Anda sudah terdaftar di sistem.");
+                closeModal('modal-register-face');
+                renderUserDashboard(); // Refresh agar warning merah hilang
+            }
+        }
+
+
+        // ================= FUNGSI BUKA KAMERA & CEK GPS & FACE RECOGNITION (ABSEN) =================
         async function openAbsenModal(shift) {
-            currentTargetShift = shift; // Ingat tombol unit mana yang tadi dipencet (SD/TPQ/Tahfiz)
+            // Pemblokiran jika blm daftar wajah (Anti bypass)
+            if (!currentUser.face_data || currentUser.face_data.length < 10) {
+                return alert("TOLAK: Anda belum mendaftarkan wajah biometrik Anda. Silahkan scroll ke atas dan klik Daftarkan Wajah Saya Sekarang.");
+            }
+
+            currentTargetShift = shift; 
             document.getElementById('lbl-absen-shift').innerText = `(${shift})`;
             showModal('modal-absen'); 
+            
             tempLocation = null;
+            faceMatchSuccess = false; // Reset status Face Recog
 
             const btn = document.getElementById('btn-capture-absen');
             const geoStatus = document.getElementById('geo-status');
+            const faceStatus = document.getElementById('face-rec-status');
             const geoDist = document.getElementById('geo-distance');
             const geoAcc = document.getElementById('geo-accuracy');
             
-            // Lumpuhkan tombol scan sementara waktu sambil menunggu sinyal GPS
-            btn.disabled = true; btn.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all cursor-not-allowed";
+            // Default Tombol Mati
+            btn.disabled = true; btn.innerHTML = `<i class="ph ph-lock-key"></i> Sistem Terkunci`;
+            btn.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all cursor-not-allowed";
+            
             geoStatus.innerHTML = `<i class="ph ph-spinner-gap animate-spin"></i> Mencari Satelit GPS...`; 
+            faceStatus.innerHTML = `<i class="ph ph-eye-slash text-yellow-400"></i> Analisis Wajah AI...`; 
             geoDist.classList.add('hidden'); geoAcc.classList.add('hidden');
 
-            // Panggil API Geolocation HP
+            let isGpsLolos = false; // Flag apakah lolos GPS
+
+            // PROSES 1: GEOLOCATION / GPS
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         tempLocation = `${pos.coords.latitude},${pos.coords.longitude}`;
-                        // Cek apakah Admin sudah menetapkan koordinat kunci pusat sekolah di menu setting
                         if (db.settings.lat && db.settings.lng) {
-                            // Kalkulasi matematika kelengkungan bumi (Haversine Formula) untuk mencari jarak meter
-                            const dbLat = parseFloat(db.settings.lat);
-                            const dbLng = parseFloat(db.settings.lng);
+                            const dbLat = parseFloat(db.settings.lat); const dbLng = parseFloat(db.settings.lng);
                             const d = calcDistance(pos.coords.latitude, pos.coords.longitude, dbLat, dbLng);
                             const r = parseInt(db.settings.radius || 100);
                             
@@ -1037,113 +1205,158 @@
                             geoAcc.innerText = `Akurasi Sinyal HP: ${Math.floor(pos.coords.accuracy)}m`; geoAcc.classList.remove('hidden');
                             
                             if (d <= r) { 
-                                geoStatus.innerHTML = `<i class="ph ph-check-circle text-green-400"></i> Di Dalam Area`; 
-                                enableScanButton(); 
+                                geoStatus.innerHTML = `<i class="ph ph-check-circle text-green-400"></i> Di Dalam Area Sekolah`; 
+                                isGpsLolos = true;
+                                cekPembukaanTombol(isGpsLolos, faceMatchSuccess); // Evaluasi buka gembok
                             } else {
                                 geoStatus.innerHTML = `<i class="ph ph-warning-octagon text-red-500"></i> Di Luar Area Sekolah!`;
                             }
                         } else { 
-                            // Jika kuncian kosong, biarkan sistem berjalan (Mode Bebas)
                             geoStatus.innerHTML = `<i class="ph ph-map-pin text-green-400"></i> Mode GPS Bebas (Belum dikunci admin)`; 
-                            enableScanButton(); 
+                            isGpsLolos = true;
+                            cekPembukaanTombol(isGpsLolos, faceMatchSuccess);
                         }
                     },
                     (err) => { 
                         geoStatus.innerHTML = `<i class="ph ph-warning-circle text-red-400"></i> Izin GPS Ditolak / Tidak Aktif!`; 
                         showToast("Akses lokasi ditolak. Aktifkan GPS dan izinkan browser."); 
                     },
-                    // Paksa Browser HP memakai akurasi tinggi GPS Asli, bukan sinyal Tower BTS. Minta umur cache 0 detik.
                     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } 
                 );
             }
             
-            // Buka Aliran Kamera Selfie Depan HP (facingMode: "user")
+            // PROSES 2: BUKA KAMERA DAN JALANKAN AI FACE RECOGNITION
             try { 
                 videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
-                document.getElementById('camera-feed').srcObject = videoStream; 
+                const videoEl = document.getElementById('camera-feed');
+                videoEl.srcObject = videoStream; 
+
+                // Event play video memicu Artificial Intelligence untuk menganalisis feed
+                videoEl.onplay = () => {
+                    const canvas = document.getElementById('face-canvas');
+                    const displaySize = { width: videoEl.clientWidth, height: videoEl.clientHeight };
+                    faceapi.matchDimensions(canvas, displaySize);
+
+                    // Konversi data profil JSON kembali menjadi Float32Array agar bisa dihitung jarak Europanya (Euclidean Distance)
+                    const mySavedDescArray = JSON.parse(currentUser.face_data);
+                    const mySavedDescriptor = new Float32Array(mySavedDescArray);
+
+                    faceDetectInterval = setInterval(async () => {
+                        const detection = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        if (detection) {
+                            const resizedDetections = faceapi.resizeResults(detection, displaySize);
+                            
+                            // Hitung jarak kemiripan (Semakin kecil semakin mirip, ambang batas umum = 0.5)
+                            const distance = faceapi.euclideanDistance(mySavedDescriptor, detection.descriptor);
+                            
+                            if (distance < 0.45) { // Toleransi kemiripan lumayan ketat (0.45)
+                                // Gambar Kotak Hijau di Wajah
+                                const box = resizedDetections.detection.box;
+                                const drawBox = new faceapi.draw.DrawBox(box, { label: 'Wajah Dikenali', boxColor: 'rgba(34, 197, 94, 1)' });
+                                drawBox.draw(canvas);
+
+                                faceStatus.innerHTML = `<i class="ph ph-check-circle text-green-400"></i> AI Mengenali Anda (Biometrik Cocok)`;
+                                faceMatchSuccess = true;
+                                cekPembukaanTombol(isGpsLolos, faceMatchSuccess); // Evaluasi akhir
+                            } else {
+                                // Gambar Kotak Merah di Wajah
+                                const box = resizedDetections.detection.box;
+                                const drawBox = new faceapi.draw.DrawBox(box, { label: 'Wajah Asing!', boxColor: 'rgba(239, 68, 68, 1)' });
+                                drawBox.draw(canvas);
+
+                                faceStatus.innerHTML = `<i class="ph ph-warning-circle text-red-500"></i> DITOLAK: Wajah Tidak Cocok!`;
+                                faceMatchSuccess = false;
+                                cekPembukaanTombol(isGpsLolos, faceMatchSuccess);
+                            }
+
+                        } else {
+                            faceStatus.innerHTML = `<i class="ph ph-eye-slash text-yellow-400"></i> Mencari wajah Anda...`;
+                            faceMatchSuccess = false;
+                            cekPembukaanTombol(isGpsLolos, faceMatchSuccess);
+                        }
+                    }, 500); // Scan tiap 500 milidetik
+                };
+
             } catch (err) { 
                 document.getElementById('camera-feed').outerHTML = `<div id="camera-feed" class="w-full h-full bg-gray-800 flex flex-col items-center justify-center text-gray-500 text-xs p-4 text-center"><i class="ph ph-camera-slash text-4xl mb-2"></i> Kamera tidak diizinkan / Error</div>`; 
             }
         }
 
-        // Matikan lampu/stream kamera jika modal diclose (Agar tidak boros baterai)
-        function stopCamera() { if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; } }
-        // Mengubah warna abu tombol ke warna hijau jika posisi lolos validasi GPS
-        function enableScanButton() { const btn = document.getElementById('btn-capture-absen'); btn.disabled = false; btn.className = "w-full bg-green-600 text-white font-bold rounded-xl py-3 shadow-lg hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2"; }
+        // Logic Gerbang AND: Hanya jika GPS hijau DAN Face hijau, tombol nyala.
+        function cekPembukaanTombol(gpsOK, faceOK) {
+            const btn = document.getElementById('btn-capture-absen');
+            if (gpsOK && faceOK) {
+                btn.disabled = false; 
+                btn.innerHTML = `<i class="ph ph-fingerprint text-xl"></i> Pindai Kehadiran`;
+                btn.className = "w-full bg-green-600 text-white font-bold rounded-xl py-3 shadow-lg hover:bg-green-700 transition active:scale-95 flex items-center justify-center gap-2"; 
+            } else {
+                btn.disabled = true; 
+                btn.innerHTML = `<i class="ph ph-lock-key"></i> Sistem Terkunci`;
+                btn.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all cursor-not-allowed";
+            }
+        }
+
+        // Matikan interval loop AI agar tidak boros baterai HP
+        function stopCamera() { 
+            if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; } 
+            if (faceDetectInterval) { clearInterval(faceDetectInterval); faceDetectInterval = null; }
+        }
         
-        // Rumus Haversine (menghitung jarak 2 titik koordinat bumi dalam satuan Meter)
         function calcDistance(lat1, lon1, lat2, lon2) { const R = 6371e3, p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180, dp = (lat2 - lat1) * Math.PI / 180, dl = (lon2 - lon1) * Math.PI / 180, a = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2), c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); return Math.floor(R * c); }
-        
-        // Penterjemah format Jam (07:30) menjadi total Menit sejak jam 00:00 (misal: 450) agar bisa dioperasi hitung kurang tambah
         function timeToMins(t) { if(!t) return 0; const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); }
-        // Sebaliknya, kembalikan format angka Menit menjadi format string "Jam:Menit"
         function minsToTime(m) { const h = Math.floor(m / 60), mn = m % 60; return `${String(h).padStart(2, '0')}:${String(mn).padStart(2, '0')}`; }
 
-        // ================= FUNGSI PROSES PENCATATAN ABSEN MASUK/PULANG =================
         function processAbsen() {
             const dateStr = getTodayDateStr(), timeStr = new Date().toTimeString().slice(0, 5), today = getTodayName();
-            // Cek apakah ia sudah punya rekaman absen hari ini pada shift yang ia klik?
             let record = db.attendance.find(a => a.userId === currentUser.id && a.date === dateStr && a.shift === currentTargetShift);
             
-            // Tarik jadwal "Master Jam Shift" khusus untuk nama hari ini dari Setting
             let dailySettings = {}; try { dailySettings = JSON.parse(db.settings.daily_times)[today] || {}; } catch(e){}
-            
-            // Cek apakah guru ini adalah petugas Piket pada shift tersebut hari ini?
             const isPiket = currentUser.role === 'guru' && (db.pickets.find(p => p.userId === currentUser.id && p.day === today && p.shift === currentTargetShift) != null);
             
-            // --- FITUR BARU: MENGAMBIL PARAMETER TOLERANSI SPESIFIK UNIT (SD / TPQ / TAHFIZ) ---
-            const shiftID = currentTargetShift; // Memudahkan variabel
+            const shiftID = currentTargetShift;
             const pEarly = parseInt(db.settings[`piket_early_${shiftID}`] || 15);
             const pLate = parseInt(db.settings[`piket_late_${shiftID}`] || 15);
-            const isStrictWindow = db.settings.strict_absen_window === 'true'; // Toggle master on/off Strict Window
+            const isStrictWindow = db.settings.strict_absen_window === 'true'; 
 
-            // Dapatkan Master Jam sesuai unit
             let batasMasukStr = '', batasKeluarStr = '';
             if (shiftID === 'SD') { batasMasukStr = dailySettings.sdIn; batasKeluarStr = dailySettings.sdOut; }
             else if (shiftID === 'TPQ') { batasMasukStr = dailySettings.tpqIn; batasKeluarStr = dailySettings.tpqOut; }
             else if (shiftID === 'Tahfiz') { batasMasukStr = dailySettings.tahfizIn; batasKeluarStr = dailySettings.tahfizOut; }
 
             if (!record) {
-                // =============== LOGIKA ABSEN MASUK ================
                 let disiplin = 'Tepat Waktu';
                 
                 if (batasMasukStr) {
-                    let batasMins = timeToMins(batasMasukStr); // Konversi batas master ke bentuk menit (Int)
-                    // Aturan piket: Target jam masuk akan dimajukan (dikurang pEarly)
+                    let batasMins = timeToMins(batasMasukStr); 
                     let targetMasukToleransi = isPiket ? batasMins - pEarly : batasMins;
                     
-                    // PENGECEKAN STRICT WINDOW (Batas Ketat Waktu Spesifik Unit)
                     if (isStrictWindow) {
-                        // Buka Jendela = Target Masuk - Angka Mundur (Start)
                         let wStart = targetMasukToleransi - parseInt(db.settings[`window_in_start_${shiftID}`] || 60);
-                        // Tutup Jendela = Target Masuk + Angka Maju (End)
                         let wEnd = targetMasukToleransi + parseInt(db.settings[`window_in_end_${shiftID}`] || 60);
-                        let currentMins = timeToMins(timeStr); // Jam real HP saat ini
+                        let currentMins = timeToMins(timeStr);
                         
                         if (currentMins < wStart || currentMins > wEnd) {
                             alert(`DITOLAK SISTEM: Anda memindai di luar batas waktu!\n\nJendela Absen MASUK Unit ${shiftID} HANYA DIBUKA antara pukul ${minsToTime(wStart)} s/d ${minsToTime(wEnd)}.`);
-                            closeModal('modal-absen'); return; // Gagalkan absen
+                            closeModal('modal-absen'); return; 
                         }
                     }
 
-                    // Menentukan Predikat Tepat/Terlambat
                     if (timeToMins(timeStr) > targetMasukToleransi) disiplin = 'Terlambat';
                 }
 
-                // Buat Objek Rekaman Baru karena ini adalah Tap Masuk pertama
                 record = { id: 'abs_' + Date.now(), userId: currentUser.id, date: dateStr, shift: shiftID, timeIn: timeStr, timeOut: "", location: tempLocation, status: "Masuk", disiplin: disiplin };
                 db.attendance.push(record);
                 showToast(`Absen Masuk ${shiftID} terekam sukses.`);
             } 
             else if (!record.timeOut) {
-                // =============== LOGIKA ABSEN PULANG ================
-                // (Dieksekusi jika ia sudah punya record masuk, tapi record timeOut-nya masih kosong)
                 if (batasKeluarStr) {
                     let minKeluarMins = timeToMins(batasKeluarStr);
-                    // Aturan Piket: Piket dilarang pulang kalau belum lewat toleransi pLate
                     let targetPulangToleransi = isPiket ? minKeluarMins + pLate : minKeluarMins;
 
-                    // PENGECEKAN STRICT WINDOW PULANG
                     if (isStrictWindow) {
                         let wStart = targetPulangToleransi - parseInt(db.settings[`window_out_start_${shiftID}`] || 0);
                         let wEnd = targetPulangToleransi + parseInt(db.settings[`window_out_end_${shiftID}`] || 120);
@@ -1155,26 +1368,21 @@
                         }
                     }
 
-                    // Jika Strict Window sedang OFF, kita perlu minimal mengamankan agar orang tidak absen pulang terlalu cepat! (Pencuri jam)
                     if (timeToMins(timeStr) < targetPulangToleransi && !isStrictWindow) {
                         alert(`Ditolak: Anda belum diizinkan pulang ke rumah sebelum pukul ${minsToTime(targetPulangToleransi)}.`); closeModal('modal-absen'); return;
                     }
                 }
                 
-                // Tambahkan (Update) objek rekaman yang sama dengan data jam Pulangnya
                 record.timeOut = timeStr; record.status = "Selesai"; showToast(`Absen Pulang ${shiftID} berhasil disimpan.`);
             } 
             else { 
-                // Jika In dan Out sudah terisi semua
                 showToast(`Siklus ${shiftID} anda sudah tuntas hari ini. Tidak perlu memindai lagi.`); closeModal('modal-absen'); return; 
             }
 
-            // Simpan, tembak ke backend server google, dan tutup kamera. Render ulang kartu agar jamnya muncul.
             saveDB(); pushToBackend('save_absen', record); closeModal('modal-absen'); renderUserDashboard();
         }
 
         // ================= FUNGSI-FUNGSI PENDUKUNG FORM IZIN =================
-        // Menampilkan UI yang relevan (Tanggal saja vs Tanggal+Jam) tergantung durasi izin
         function toggleIzinTipe() {
             const tipe = document.querySelector('input[name="izinTipe"]:checked').value;
             const contFull = document.getElementById('izin-container-full'), contParsial = document.getElementById('izin-container-parsial');
@@ -1182,12 +1390,11 @@
             else { contFull.classList.add('hidden'); contParsial.classList.remove('hidden'); document.getElementById('izin-start-date').required = false; document.getElementById('izin-end-date').required = false; document.getElementById('izin-single-date').required = true; document.getElementById('izin-start-time').required = true; }
         }
         function resetIzinForm() { document.getElementById('form-izin').reset(); const ds = getTodayDateStr(); document.getElementById('izin-start-date').value = ds; document.getElementById('izin-end-date').value = ds; document.getElementById('izin-single-date').value = ds; toggleIzinTipe(); }
-        // Menangkap Submit Form Ajuan Izin oleh Guru
+        
         function ajukanIzin(e) {
             e.preventDefault(); const tipe = document.querySelector('input[name="izinTipe"]:checked').value;
             let payload = { id: 'iz_' + Date.now(), userId: currentUser.id, type: tipe, status: 'Pending', substituteId: '', reason: document.getElementById('izin-alasan').value };
             
-            // Validasi Input Tanggal Terbalik
             if (tipe === 'Full') { 
                 payload.startDate = document.getElementById('izin-start-date').value; payload.endDate = document.getElementById('izin-end-date').value; payload.startTime = ''; payload.endTime = ''; 
                 if (payload.startDate > payload.endDate) return alert("Error: Tanggal Selesai lebih usang (kuno) daripada Tanggal Mulai!"); 
@@ -1196,19 +1403,15 @@
             }
             
             db.izin.push(payload); saveDB(); pushToBackend('save_izin', payload); closeModal('modal-ajukan-izin'); showToast("Surat Izin dikirim ke Admin untuk diperiksa.");
-            // Render ulang dashboard si guru agar panel notifikasi di atas update jadi 'Pending'
             renderUserDashboard();
         }
 
         // ================= FUNGSI NAVIGASI TAB MENU ADMIN =================
         function switchAdminTab(tab) {
-            // Sembunyikan semua konten Tab, abu-abukan semua teks Menu navigasi atas
             ['dashboard', 'pengguna', 'master', 'jadwal', 'piket', 'izin', 'laporan', 'pengaturan'].forEach(t => { document.getElementById(`admin-${t}`).classList.add('hidden'); document.getElementById(`tab-${t}`).classList.remove('tab-active'); document.getElementById(`tab-${t}`).classList.add('text-gray-500'); });
             
-            // Munculkan dan aktifkan tab yang diklik
             document.getElementById(`admin-${tab}`).classList.remove('hidden'); document.getElementById(`tab-${tab}`).classList.add('tab-active'); document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
             
-            // Jalankan fungsi Refresh (Render) spesifik untuk memuat isi konten datanya ke layar HTML
             if (tab === 'dashboard') renderAdminDashboard();
             if (tab === 'pengguna') renderAdminUser('guru');
             if (tab === 'master') { renderAdminKelas(); renderAdminMapel(); }
@@ -1221,77 +1424,80 @@
 
         // ================= FUNGSI RENDER DASHBOARD ADMIN =================
         function renderAdminDashboard() {
-            // Kalkulasi Cepat Data Statistik
             document.getElementById('stat-total-guru').innerText = db.users.filter(u => u.role === 'guru' || u.role === 'tendik').length;
             document.getElementById('stat-total-kelas').innerText = db.classes.length;
             document.getElementById('stat-hadir-hari-ini').innerText = db.attendance.filter(a => a.date === getTodayDateStr()).length;
             
             const ds = getTodayDateStr(); 
-            // Hitung orang yang izin hari ini
             document.getElementById('stat-izin-hari-ini').innerText = db.izin.filter(i => { if (i.status !== 'Disetujui') return false; if (i.type === 'Full') return (ds >= i.startDate && ds <= i.endDate); return (i.startDate === ds); }).length;
             
-            // Hitung angka bulat merah (Badge) notifikasi jumlah izin yang belum disentuh
             const p = db.izin.filter(i => i.status === 'Pending').length; 
             const b = document.getElementById('badge-izin'); 
             if (p > 0) { b.innerText = p; b.classList.remove('hidden'); } else b.classList.add('hidden');
             
-            // Tampilkan 5 record absen orang terakhir kali masuk
             const rel = document.getElementById('admin-recent-absen'); rel.innerHTML = '';
             const recent = [...db.attendance].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 5); 
-            if (recent.length === 0) rel.innerHTML = '<p class="text-xs text-gray-500 italic text-center">Belum ada aktivitas.</p>';
+            if (recent.length === 0) rel.innerHTML = '<p class="text-xs text-gray-500 italic text-center">Belum ada aktivitas absen hari ini.</p>';
             else { recent.forEach(r => { const k = db.users.find(g => g.id === r.userId); rel.innerHTML += `<div class="flex justify-between text-sm border-b border-gray-100 pb-2 mb-2 hover:bg-gray-50 transition p-1 rounded"><div><p class="font-bold text-gray-800">${k?.name||'-'} <span class="bg-blue-100 text-blue-700 px-1 text-[9px] rounded uppercase font-bold tracking-wider">${r.shift}</span></p><p class="text-[10px] text-gray-400 mt-1">${r.date}</p></div><div class="text-right text-xs bg-gray-50 border p-1.5 rounded shadow-inner"><span class="text-green-600 font-bold block">IN: ${r.timeIn}</span><span class="text-yellow-600 font-bold block border-t border-gray-200 mt-0.5 pt-0.5">OUT: ${r.timeOut||'--:--'}</span></div></div>`; }); }
         }
 
         // ================= FUNGSI MANAJEMEN PENGGUNA (GURU & TENDIK) =================
-        // Utilitas untuk mendisable anak Mapel jika kotak "Guru Kelas Utama" dicentang
         function toggleAllSubjects(el) { document.querySelectorAll('.guru-sub-cb').forEach(cb => { cb.disabled = el.checked; if (el.checked) cb.checked = false; }); }
         
-        // Memunculkan kotak isian Jabatan (jika Tendik) atau kotak Mapel (jika Guru)
         function toggleUserRoleFields() { 
             const role = document.getElementById('user-role').value; 
             document.getElementById('user-subjects-area').style.display = role === 'guru' ? 'block' : 'none'; 
             document.getElementById('user-jabatan-area').style.display = role === 'tendik' ? 'block' : 'none'; 
-            document.getElementById('user-unit-area').style.display = 'block'; // Kotak Centang (SD/TPQ) dibutuhkan untuk keduanya
+            document.getElementById('user-unit-area').style.display = 'block'; 
         }
 
-        // Buka form popup Tambah/Edit User
         function openModalUser(id = null) {
-            // Render Daftar Kotak Ceklis Mapel terlebih dahulu
             const container = document.getElementById('user-subjects-container'); container.innerHTML = '';
             db.subjects.forEach(s => { container.innerHTML += `<div class="flex items-center"><input type="checkbox" id="sub_${s.id}" value="${s.id}" class="guru-sub-cb mr-1.5 rounded text-black accent-black"><label for="sub_${s.id}" class="truncate w-full text-gray-700 text-[10px] cursor-pointer hover:text-black transition">${s.name} (${s.shift})</label></div>`; });
             
-            // JIKA MODE EDIT (Menerima parameter ID)
+            const btnResetWajah = document.getElementById('admin-face-reset-area');
+
             if (id) {
                 const u = db.users.find(x => x.id === id); 
                 document.getElementById('user-id').value = u.id; document.getElementById('user-role').value = u.role || 'guru'; document.getElementById('user-nama').value = u.name; document.getElementById('user-uname').value = u.username; document.getElementById('user-pass').value = ''; 
                 document.getElementById('user-jabatan').value = u.jabatan || '';
+                document.getElementById('user-face-data').value = u.face_data || '';
                 
-                // Distribusikan centang pada profil Unitnya
+                // Jika user ini sudah punya rekaman wajah, berikan admin opsi menghapusnya
+                if (u.face_data && u.face_data.length > 10) { btnResetWajah.classList.remove('hidden'); } else { btnResetWajah.classList.add('hidden'); }
+
                 const uUnits = u.unit ? u.unit.split(',') : [];
                 document.querySelectorAll('.user-cb-unit').forEach(cb => cb.checked = uUnits.includes(cb.value));
 
-                // Distribusikan centang pada profil Mapelnya
                 const allCb = document.getElementById('user-sub-all');
                 if (u.subjects === 'ALL' || !u.subjects) { allCb.checked = true; document.querySelectorAll('.guru-sub-cb').forEach(cb => cb.disabled = true); } 
                 else { allCb.checked = false; const subs = u.subjects.split(','); document.querySelectorAll('.guru-sub-cb').forEach(cb => { cb.disabled = false; cb.checked = subs.includes(cb.value); }); }
             } 
-            // JIKA MODE TAMBAH BARU
             else { 
                 document.getElementById('form-user').reset(); document.getElementById('user-id').value = ''; document.getElementById('user-role').value = 'guru';
-                document.getElementById('user-jabatan').value = '';
+                document.getElementById('user-jabatan').value = ''; document.getElementById('user-face-data').value = '';
                 document.getElementById('user-sub-all').checked = true; toggleAllSubjects(document.getElementById('user-sub-all')); 
                 document.querySelectorAll('.user-cb-unit').forEach(cb => cb.checked = false);
+                btnResetWajah.classList.add('hidden');
             }
             toggleUserRoleFields(); showModal('modal-add-user');
         }
 
-        // Aksi Simpan Data Pengguna
+        // Fitur tombol admin menghapus paksa biometrik wajah guru dari profile form
+        function hapusWajahUser() {
+            if(confirm("Apakah Anda yakin menghapus data Wajah biometrik ini? Pengguna harus melakukan pendaftaran ulang lewat aplikasinya agar bisa absen kembali.")) {
+                document.getElementById('user-face-data').value = ''; // Kosongkan hidden input
+                document.getElementById('admin-face-reset-area').classList.add('hidden'); // Sembunyikan tombolnya
+                showToast("Data wajah di formulir telah dikosongkan. Silakan klik tombol 'Simpan Data' hitam di bawah untuk menyimpan perubahan ini ke database.");
+            }
+        }
+
         function saveUser(e) { 
             e.preventDefault(); 
             const id = document.getElementById('user-id').value, name = document.getElementById('user-nama').value, uname = document.getElementById('user-uname').value, pass = document.getElementById('user-pass').value, role = document.getElementById('user-role').value; 
             const jabatan = document.getElementById('user-jabatan').value;
+            const savedFaceData = document.getElementById('user-face-data').value;
             
-            // Merakit String yang dipisahkan koma untuk Mapel & Unit
             let subsStr = 'ALL', unitStr = ''; 
             const checkedUnits = Array.from(document.querySelectorAll('.user-cb-unit:checked')).map(cb => cb.value);
             if (checkedUnits.length === 0) return alert("Pilih minimal 1 Shift Unit Penugasan (SD, TPQ, atau Tahfiz)!");
@@ -1304,36 +1510,40 @@
             let payload; 
             if (id) { 
                 const idx = db.users.findIndex(u => u.id === id); 
-                if (idx > -1) { db.users[idx].name = name; db.users[idx].username = uname; db.users[idx].role = role; db.users[idx].subjects = subsStr; db.users[idx].unit = unitStr; db.users[idx].jabatan = jabatan; if (pass) db.users[idx].password = pass; payload = db.users[idx]; } 
+                if (idx > -1) { 
+                    db.users[idx].name = name; db.users[idx].username = uname; db.users[idx].role = role; db.users[idx].subjects = subsStr; db.users[idx].unit = unitStr; db.users[idx].jabatan = jabatan; 
+                    db.users[idx].face_data = savedFaceData; // Timpa wajah baru (atau string kosong jika dihapus)
+                    if (pass) db.users[idx].password = pass; 
+                    payload = db.users[idx]; 
+                } 
                 showToast("Akun Diperbarui."); 
             } else { 
                 if (db.users.find(u => u.username === uname)) return alert("Username sudah terpakai oleh orang lain. Pilih yang unik."); 
-                payload = { id: 'u_' + Date.now(), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr, jabatan: jabatan }; 
+                payload = { id: 'u_' + Date.now(), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr, jabatan: jabatan, face_data: '' }; 
                 db.users.push(payload); showToast("Akun Baru Dibuat."); 
             } 
             saveDB(); pushToBackend('save_user', payload); closeModal('modal-add-user'); renderAdminUser(role); 
         }
         
-        // Cetak daftar pengguna di layar HP/PC Admin
         function renderAdminUser(roleFilter) { 
-            // Modifikasi Desain Tab Guru / Tendik
-            document.getElementById('subtab-usr-guru').className = roleFilter === 'guru' ? "text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner" : "text-xs font-bold px-3 py-1 bg-white border border-gray-300 rounded-full text-gray-500 transition hover:bg-gray-50";
-            document.getElementById('subtab-usr-tendik').className = roleFilter === 'tendik' ? "text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner" : "text-xs font-bold px-3 py-1 bg-white border border-gray-300 rounded-full text-gray-500 transition hover:bg-gray-50";
+            document.getElementById('subtab-usr-guru').className = roleFilter === 'guru' ? "text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner transition" : "text-xs font-bold px-3 py-1 bg-white border border-gray-300 rounded-full text-gray-500 transition hover:bg-gray-50";
+            document.getElementById('subtab-usr-tendik').className = roleFilter === 'tendik' ? "text-xs font-bold px-3 py-1 bg-gray-200 rounded-full shadow-inner transition" : "text-xs font-bold px-3 py-1 bg-white border border-gray-300 rounded-full text-gray-500 transition hover:bg-gray-50";
             
             const listEl = document.getElementById('admin-user-list'); listEl.innerHTML = ''; 
             const filteredUsers = db.users.filter(u => u.role === roleFilter);
             if(filteredUsers.length === 0) { listEl.innerHTML = `<div class="p-4 bg-white border-dashed border text-center text-xs text-gray-400 rounded-xl">Kosong. Belum ada karyawan.</div>`; return; }
             
             filteredUsers.forEach(g => { 
-                // Gambar lencana unit kecil-kecil berwarna biru
                 let badgeUnit = '';
                 const un = g.unit ? g.unit.split(',') : [];
                 un.forEach(u => badgeUnit += `<span class="text-[9px] bg-blue-100 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded mr-1 font-bold shadow-sm">${u}</span>`);
                 
-                // Tambahkan teks jabatan jika dia Tendik
                 let extraInfo = g.role === 'tendik' && g.jabatan ? `<p class="text-[10px] text-orange-600 font-bold mb-1">${g.jabatan}</p>` : '';
+                
+                // Lencana Face Recognition status
+                let badgeFace = (g.face_data && g.face_data.length > 10) ? `<span class="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-1 rounded flex items-center gap-1 mt-1 w-max shadow-sm"><i class="ph ph-scan"></i> AI Wajah: Ready</span>` : `<span class="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1 rounded flex items-center gap-1 mt-1 w-max shadow-sm"><i class="ph ph-warning-circle"></i> AI Wajah: Belum Daftar</span>`;
 
-                listEl.innerHTML += `<div class="bg-white border p-3 rounded-xl flex justify-between items-center shadow-sm hover:border-gray-400 transition-colors"><div><p class="font-bold text-sm text-gray-800">${g.name}</p>${extraInfo}<p class="text-[11px] text-gray-500 font-mono"><i class="ph ph-fingerprint"></i> ${g.username}</p><div class="mt-2 flex flex-wrap gap-1">${badgeUnit}</div></div><div class="flex gap-2"><button onclick="openModalUser('${g.id}')" class="p-2 bg-gray-50 border rounded shadow-sm hover:bg-gray-200"><i class="ph ph-pencil-simple text-blue-600"></i></button><button onclick="deleteUser('${g.id}')" class="p-2 bg-red-50 border border-red-200 rounded shadow-sm hover:bg-red-100"><i class="ph ph-trash text-red-600"></i></button></div></div>`; 
+                listEl.innerHTML += `<div class="bg-white border p-3 rounded-xl flex justify-between items-center shadow-sm hover:border-gray-400 transition-colors"><div><p class="font-bold text-sm text-gray-800">${g.name}</p>${extraInfo}<p class="text-[11px] text-gray-500 font-mono"><i class="ph ph-fingerprint"></i> ${g.username}</p><div class="mt-2 flex flex-wrap gap-1">${badgeUnit}</div>${badgeFace}</div><div class="flex gap-2"><button onclick="openModalUser('${g.id}')" class="p-2 bg-gray-50 border rounded shadow-sm hover:bg-gray-200 transition"><i class="ph ph-pencil-simple text-blue-600"></i></button><button onclick="deleteUser('${g.id}')" class="p-2 bg-red-50 border border-red-200 rounded shadow-sm hover:bg-red-100 transition"><i class="ph ph-trash text-red-600"></i></button></div></div>`; 
             }); 
         }
 
@@ -1363,17 +1573,15 @@
             const fullCfg = getFullRosterConfig(); const cfg = fullCfg[shift] || { slotDuration: 40, days: {}, breaks: [] }; 
             document.getElementById('cfg-slot-duration').value = cfg.slotDuration;
             const cont = document.getElementById('cfg-days-container'); cont.innerHTML = '';
-            // Susun baris input jam aktif per hari
+            
             ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].forEach(hari => { let s = '', e = ''; if (cfg.days && cfg.days[hari]) { s = cfg.days[hari].start; e = cfg.days[hari].end; } cont.innerHTML += `<div class="flex items-center gap-2 mb-1"><span class="w-12 font-bold text-[10px] text-gray-600">${hari}</span><input type="time" id="cfg-d-s-${hari}" value="${s}" class="border rounded p-1 flex-1 text-sm bg-gray-50 outline-none"><span class="text-gray-400">-</span><input type="time" id="cfg-d-e-${hari}" value="${e}" class="border rounded p-1 flex-1 text-sm bg-gray-50 outline-none"></div>`; });
             const bCont = document.getElementById('cfg-breaks-container'); bCont.innerHTML = ''; if(cfg.breaks) { cfg.breaks.forEach(b => { appendBreakRow(b.start, b.end); }); }
         }
-        // Tombol +Istirahat akan menambahkan tag input HTML secara dinamis ke layar
         function appendBreakRow(start='', end='') { const bCont = document.getElementById('cfg-breaks-container'); const div = document.createElement('div'); div.className = "flex gap-2 items-center break-row bg-gray-50 p-2 rounded border border-gray-200 shadow-inner"; div.innerHTML = `<input type="time" class="brk-s border rounded p-1 flex-1 text-sm bg-white outline-none" value="${start}"><span class="text-xs font-bold">-</span><input type="time" class="brk-e border rounded p-1 flex-1 text-sm bg-white outline-none" value="${end}"><button type="button" class="bg-white text-red-600 p-1.5 rounded border border-red-200 shadow-sm hover:bg-red-50" onclick="this.parentElement.remove()"><i class="ph ph-trash"></i></button>`; bCont.appendChild(div); }
         function addBreakRow() { appendBreakRow(); } 
         function openModalConfigRoster() { showModal('modal-config-roster'); switchCfgShift('SD'); } 
         function saveConfigRoster(e) {
             e.preventDefault(); const shift = document.getElementById('cfg-shift').value; let config = { slotDuration: parseInt(document.getElementById('cfg-slot-duration').value), days: {}, breaks: [] };
-            // Ambil semua input jam dari layar lalu rakit jadi format JSON
             ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].forEach(hari => { const s = document.getElementById(`cfg-d-s-${hari}`).value, end = document.getElementById(`cfg-d-e-${hari}`).value; if (s && end) config.days[hari] = { start: s, end: end }; });
             document.querySelectorAll('.break-row').forEach(row => { const s = row.querySelector('.brk-s').value, e = row.querySelector('.brk-e').value; if(s && e) config.breaks.push({start: s, end: e}); });
             
@@ -1390,46 +1598,38 @@
             const fullCfg = getFullRosterConfig(), config = fullCfg[shift];
             if(!config || Object.keys(config.days||{}).length === 0) return alert(`Parameter Waktu (Roda Gigi) untuk Shift ${shift} belum disetting sama sekali!`);
 
-            // Bersihkan kanvas memori jadwal kelas tersebut
             db.schedules = db.schedules.filter(s => s.classId !== classId); let newSchedules = [];
             const teachers = db.users.filter(u => u.role === 'guru'); const validSubjects = db.subjects.filter(s => (s.shift || 'SD') === shift);
 
-            // Lintasi dari Senin s/d Sabtu
             for (const [day, hours] of Object.entries(config.days)) {
                 let currentMins = timeToMins(hours.start); const endMins = timeToMins(hours.end); const slotDur = config.slotDuration;
                 
-                // Selama jam masih belum melewati batas akhir jam pulang harian...
                 while (currentMins + slotDur <= endMins) {
                     const slotStartStr = minsToTime(currentMins), slotEndStr = minsToTime(currentMins + slotDur);
                     
-                    // Cek Tabrakan dengan Jam Istirahat
                     let isBreak = false;
                     for (let brk of (config.breaks||[])) { const brkStart = timeToMins(brk.start), brkEnd = timeToMins(brk.end); if ((currentMins >= brkStart && currentMins < brkEnd) || (currentMins + slotDur > brkStart && currentMins + slotDur <= brkEnd)) { currentMins = brkEnd; isBreak = true; break; } }
-                    if (isBreak) continue; // Langsung lompat tinggalkan waktu ini
+                    if (isBreak) continue; 
 
                     let assigned = false;
-                    // Acak (Shuffle) mapel agar penyusunan random
                     let shuffledSubjects = [...validSubjects].sort(() => 0.5 - Math.random());
                     
                     for (let subj of shuffledSubjects) {
-                        // Saring Guru siapa yang bisa ngajar Mapel Ini (Skill matching)
                         let eligibleTeachers = teachers.filter(t => t.subjects === 'ALL' || (t.subjects && t.subjects.split(',').includes(subj.id)));
                         eligibleTeachers = eligibleTeachers.sort(() => 0.5 - Math.random());
                         
                         for (let t of eligibleTeachers) {
-                            // Cek tabrakan: Apakah guru ini punya jam ngajar lain yang bentrok dengan array memory lokal atau database real kita di jam ini?
                             const tempClash = newSchedules.find(ns => ns.teacherId === t.id && ns.day === day && ((slotStartStr < ns.endTime) && (slotEndStr > ns.startTime)));
                             const realClash = isClashing(t.id, day, slotStartStr, slotEndStr);
                             
-                            // Jika lulus seleksi (aman tak ada bentrok)
                             if (!tempClash && !realClash) { 
                                 newSchedules.push({ id: 'sch_' + Date.now() + Math.floor(Math.random()*1000), classId: classId, teacherId: t.id, subjectId: subj.id, day: day, startTime: slotStartStr, endTime: slotEndStr, desc: "AI Generate" }); 
-                                assigned = true; break; // Break keluar loop guru
+                                assigned = true; break; 
                             }
                         }
-                        if (assigned) break; // Break keluar loop Mapel, artinya slot waktu ini sukses diisi. Lanjut ke menit (waktu) selanjutnya.
+                        if (assigned) break; 
                     }
-                    currentMins += slotDur; // Majukan jam.
+                    currentMins += slotDur; 
                 }
             }
             db.schedules = db.schedules.concat(newSchedules); saveDB(); pushToBackend('bulk_save_jadwal', newSchedules); showToast(`AI Menyusun ${newSchedules.length} slot.`); renderAdminJadwal();
@@ -1437,6 +1637,30 @@
 
         // ================= FUNGSI MANAJEMEN ROSTER MANUAL =================
         function populateJadwalFilters() { const sel = document.getElementById('roster-class-filter'); sel.innerHTML = '<option value="">-- Silakan Pilih Kelas --</option>'; db.classes.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.shift||'SD'})</option>`); renderAdminJadwal(); }
+        
+        // Pemicu buka modal jadwal manual dari tombol tabel (Fitur Baru)
+        function openModalJadwalManual(hari) {
+            document.getElementById('form-jadwal').reset();
+            document.getElementById('jadwal-id').value = '';
+            
+            const selHari = document.getElementById('jadwal-hari');
+            if(hari) selHari.value = hari; // Set default dropdown ke hari yang di-klik
+            
+            const classId = document.getElementById('roster-class-filter').value;
+            document.getElementById('jadwal-kelas-display').value = getClassName(classId);
+            
+            showModal('modal-add-jadwal');
+        }
+
+        // Fungsi Kalkulasi Jam Otomatis di Modal Jadwal (Fitur Baru)
+        function autoCalcTime(mins) {
+            const startStr = document.getElementById('jadwal-mulai').value;
+            if (!startStr) return alert('Isi Jam Mulai terlebih dahulu');
+            const startMins = timeToMins(startStr);
+            const endMins = startMins + mins;
+            document.getElementById('jadwal-selesai').value = minsToTime(endMins);
+        }
+
         function renderAdminJadwal() {
             const classId = document.getElementById('roster-class-filter').value, actionArea = document.getElementById('roster-action-area'), emptyState = document.getElementById('roster-empty-state'), viewArea = document.getElementById('roster-view-area');
             if (!classId) { actionArea.classList.add('hidden'); emptyState.classList.remove('hidden'); return; }
@@ -1450,14 +1674,13 @@
 
             HARI_ARRAY.slice(1).concat(HARI_ARRAY[0]).forEach(hari => {
                 const dayScheds = db.schedules.filter(s => s.classId === classId && s.day === hari).sort((a, b) => a.startTime.localeCompare(b.startTime));
-                let html = `<div class="border rounded-xl mb-4 bg-white shadow-sm overflow-hidden"><div class="bg-gray-100 px-3 py-2 border-b border-gray-200 font-bold text-xs flex justify-between items-center uppercase tracking-widest text-gray-700"><span class="flex items-center gap-1"><i class="ph ph-calendar-blank"></i> ${hari}</span> <span class="bg-black text-white px-2 py-0.5 rounded-full shadow">${dayScheds.length} Slot</span></div><div class="divide-y divide-gray-100">`;
+                let html = `<div class="border rounded-xl mb-4 bg-white shadow-sm overflow-hidden"><div class="bg-gray-100 px-3 py-2 border-b border-gray-200 font-bold text-xs flex justify-between items-center uppercase tracking-widest text-gray-700"><span class="flex items-center gap-1"><i class="ph ph-calendar-blank"></i> ${hari}</span> <div class="flex items-center gap-2"><span class="bg-black text-white px-2 py-0.5 rounded-full shadow">${dayScheds.length} Slot</span><button onclick="openModalJadwalManual('${hari}')" class="bg-blue-600 text-white px-2 py-0.5 rounded shadow text-[10px] hover:bg-blue-700 capitalize transition">+ Tambah</button></div></div><div class="divide-y divide-gray-100">`;
                 if (dayScheds.length === 0) html += `<div class="p-4 text-xs text-gray-400 italic text-center">Kosong</div>`;
-                else { dayScheds.forEach(s => { html += `<div class="p-3 flex justify-between items-center hover:bg-gray-50 transition"><div><p class="text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded shadow-sm inline-block mb-1">${s.startTime} - ${s.endTime}</p><p class="text-sm font-bold leading-snug text-gray-800">${getSubjectName(s.subjectId)}</p><p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1"><i class="ph ph-chalkboard-teacher text-lg"></i> ${getTeacherName(s.teacherId)}</p></div><button onclick="deleteJadwal('${s.id}')" class="p-2 text-red-600 bg-white border border-red-200 rounded shadow-sm hover:bg-red-50"><i class="ph ph-trash"></i></button></div>`; }); }
+                else { dayScheds.forEach(s => { html += `<div class="p-3 flex justify-between items-center hover:bg-gray-50 transition"><div><p class="text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded shadow-sm inline-block mb-1">${s.startTime} - ${s.endTime}</p><p class="text-sm font-bold leading-snug text-gray-800">${getSubjectName(s.subjectId)}</p><p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1"><i class="ph ph-chalkboard-teacher text-lg"></i> ${getTeacherName(s.teacherId)}</p></div><button onclick="deleteJadwal('${s.id}')" class="p-2 text-red-600 bg-white border border-red-200 rounded shadow-sm hover:bg-red-50 transition"><i class="ph ph-trash"></i></button></div>`; }); }
                 html += `</div></div>`; viewArea.innerHTML += html;
             });
         }
         
-        // Logika Pemeriksa Bentrok (Clash Finder). Rumusnya: startTime target < endTime master && endTime target > startTime master
         function isClashing(teacherId, day, startTime, endTime, skipId = null) { return db.schedules.find(s => { if (s.teacherId !== teacherId || s.day !== day) return false; if (skipId && s.id === skipId) return false; return (startTime < s.endTime) && (endTime > s.startTime); }); }
         
         function saveJadwal(e) { e.preventDefault(); const id = document.getElementById('jadwal-id').value, classId = document.getElementById('roster-class-filter').value; if (!classId) return; const data = { classId, teacherId: document.getElementById('jadwal-guru').value, subjectId: document.getElementById('jadwal-mapel').value, day: document.getElementById('jadwal-hari').value, startTime: document.getElementById('jadwal-mulai').value, endTime: document.getElementById('jadwal-selesai').value, desc: document.getElementById('jadwal-ket').value }; 
@@ -1480,7 +1703,6 @@
             db.schedules.filter(s => s.day === hari).forEach(s => { const c = db.classes.find(x => x.id === s.classId); if (c && (c.shift || 'SD') === shift && !guruHadir.includes(s.teacherId)) guruHadir.push(s.teacherId); });
             if (guruHadir.length === 0) return alert("Hambatan AI: Tidak ada satupun guru yang jadwal kelasnya ada pada hari dan unit tersebut.");
             
-            // Random gacha menggunakan Math.floor + Math.random
             const guruTerpilih = guruHadir[Math.floor(Math.random() * guruHadir.length)]; 
             if(db.pickets.find(p => p.userId === guruTerpilih && p.day === hari && p.shift === shift)) return showToast("Gacha ulang, nama ini sudah terpilih.");
             
@@ -1495,7 +1717,6 @@
             
             let targetSD = [], targetTPQ = [], targetTahfiz = [];
 
-            // Evaluasi (Assessment) seluruh database karyawan satu-per-satu
             db.users.filter(u => u.role === 'guru' || u.role === 'tendik').forEach(pegawai => {
                 let hasSD = false, hasTPQ = false, hasTahfiz = false;
                 const myUnits = pegawai.unit ? pegawai.unit.split(',') : [];
@@ -1522,6 +1743,7 @@
                         else if(p.shift === 'Tahfiz') hasTahfiz = true;
                     });
 
+                    // PERBAIKAN: Analisis berdasarkan setingan admin
                     if (!hasSD && !hasTPQ && !hasTahfiz && db.settings.wajib_absen_kosong === 'true') {
                         if (db.settings.mode_absen_kosong === 'pagi') { hasSD = true; } 
                         else {
@@ -1532,18 +1754,15 @@
                     }
                 }
 
-                // Cek apakah dia orang yang wajib hadir ini kebetulan sedang ajukan izin sah hari ini
                 const objIzin = db.izin.find(i => { if (i.userId !== pegawai.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
                 const strIzin = objIzin ? ' <span class="bg-blue-100 border border-blue-300 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1 shadow-sm">IZIN CUTI BERLANGSUNG</span>' : '';
                 const titleStr = pegawai.role === 'tendik' ? `<span class="bg-orange-100 text-orange-800 border border-orange-200 px-1 py-0.5 rounded text-[8px] font-bold shadow-sm">TENDIK</span> ${pegawai.name}` : pegawai.name;
 
-                // Masukkan nama ke keranjang HTML array
                 if(hasSD) targetSD.push(`<div class="text-xs border-b border-gray-100 py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400 text-sm"></i> ${titleStr} ${strIzin}</div>`);
                 if(hasTPQ) targetTPQ.push(`<div class="text-xs border-b border-gray-100 py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400 text-sm"></i> ${titleStr} ${strIzin}</div>`);
                 if(hasTahfiz) targetTahfiz.push(`<div class="text-xs border-b border-gray-100 py-1 text-gray-700 font-semibold"><i class="ph ph-user text-gray-400 text-sm"></i> ${titleStr} ${strIzin}</div>`);
             });
 
-            // Fungsi perakit kotak hasil pencarian
             const buildHtml = (title, arr, color) => `
                 <div class="bg-white border border-${color}-200 rounded-lg p-3 shadow-sm">
                     <h4 class="font-bold text-${color}-700 text-sm mb-2 border-b-2 border-${color}-200 pb-1">${title} <span class="bg-${color}-100 border border-${color}-300 text-[10px] px-2 py-0.5 rounded-full ml-1 text-${color}-800 shadow-sm">${arr.length} Personel</span></h4>
@@ -1578,7 +1797,7 @@
             
             const selSub = document.getElementById('pi-pengganti'); selSub.innerHTML = '<option value="">(Kosongkan jika tak perlu inval)</option>'; 
             const org = db.users.find(u => u.id === iz.userId);
-            // Sembunyikan form guru pengganti (Inval) jika yang minta cuti adalah Tendik (karena Tendik tidak ngajar kelas)
+            
             if (org && org.role === 'tendik') document.getElementById('container-inval').classList.add('hidden'); 
             else { document.getElementById('container-inval').classList.remove('hidden'); db.users.filter(u => u.role === 'guru' && u.id !== iz.userId).forEach(g => selSub.innerHTML += `<option value="${g.id}">Opsi Inval: ${g.name}</option>`); }
             showModal('modal-proses-izin'); toggleInvalSelect(); 
@@ -1599,7 +1818,6 @@
             document.getElementById('print-area').classList.remove('hidden'); document.getElementById('print-periode').innerText = `Periode Rekap: ${start} s/d ${end}`;
             const tbody = document.getElementById('report-table-body'); tbody.innerHTML = '';
             
-            // Loop per per tanggal (membuat array tanggal)
             const startParts = start.split('-'), endParts = end.split('-'); let currentDate = new Date(startParts[0], startParts[1] - 1, startParts[2]); const endDateObj = new Date(endParts[0], endParts[1] - 1, endParts[2]);
             let datesArray = []; while (currentDate <= endDateObj) { datesArray.push(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`); currentDate.setDate(currentDate.getDate() + 1); } 
             datesArray.sort((a, b) => b.localeCompare(a)); // Urutkan Descending
@@ -1612,36 +1830,44 @@
                 targetUsers.forEach(karyawan => {
                     const izinToday = db.izin.find(i => { if (i.userId !== karyawan.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
 
-                    // Tentukan target unit berdasarkan filter baru
+                    // PERBAIKAN BUG KATEGORI LAPORAN:
+                    // Jika admin memilih 1 Unit spesifik, kita pastikan hanya Unit tersebut yang diproses di iterasi ini
                     let targetUnits = ['SD', 'TPQ', 'Tahfiz'];
                     if (unitId !== 'all') {
                         targetUnits = [unitId]; 
                     }
 
-                    // Guru maupun Tendik sekarang dievaluasi berdasarkan target Unit
                     targetUnits.forEach(shift => {
                         let hasSched = false, isPiket = false, isWajibTarget = false;
                         const myUnits = karyawan.unit ? karyawan.unit.split(',') : [];
+                        let isMyUnit = myUnits.includes(shift);
 
                         if (karyawan.role === 'tendik') {
-                            if (myUnits.includes(shift)) isWajibTarget = true; 
+                            if (isMyUnit) isWajibTarget = true; 
                         } else {
                             hasSched = db.schedules.some(s => s.teacherId === karyawan.id && s.day === namaHari && (db.classes.find(c=>c.id===s.classId)?.shift||'SD') === shift);
                             isPiket = db.pickets.find(p => p.userId === karyawan.id && p.day === namaHari && p.shift === shift) != null;
                             if(!hasSched && !isPiket && db.settings.wajib_absen_kosong === 'true') {
                                 if(db.settings.mode_absen_kosong === 'pagi' && shift === 'SD') isWajibTarget = true;
-                                else if (myUnits.includes(shift)) isWajibTarget = true;
+                                else if (isMyUnit) isWajibTarget = true;
                             }
                         }
 
-                        // Cari record aktualnya (Apakah mesin merekam ketukan absennya?)
                         const r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === shift);
                         
-                        // Validasi Print: Cetak baris ini ke tabel laporan JIKA dia ada absensinya, ATAU dia sedang izin sah, ATAU dia memang ditargetkan ada jadwal/wajib hadir.
-                        if (r || izinToday || hasSched || isPiket || isWajibTarget) {
+                        // Perbaikan khusus: Jangan mencetak guru izin di kategori unit yg bukan penugasan/piket/roster-nya
+                        let shiftRelevantForLeave = isMyUnit || hasSched || isPiket;
+                        let effectiveIzin = izinToday && shiftRelevantForLeave;
+
+                        if (r || effectiveIzin || hasSched || isPiket || isWajibTarget) {
                             let roleLbl = karyawan.role === 'tendik' ? `Tendik (${karyawan.jabatan||'-'}) - ${shift}` : `Guru Pendidik - ${shift}`;
-                            let infoRoster = (isPiket ? '<b>[PIKET]</b> ' : '') + (isWajibTarget && !hasSched && !isPiket ? '<b>[Wajib Apel Pimpinan]</b>' : '');
-                            cetakBarisLaporan(tbody, dateStr, karyawan.name, roleLbl, r, izinToday, infoRoster); totalRows++;
+                            let infoRoster = (isPiket ? '<b>[PIKET]</b> ' : '') + (isWajibTarget && !hasSched && !isPiket ? '<b>[Wajib Apel]</b>' : '');
+                            
+                            if (!hasSched && !isPiket && !isWajibTarget && r) {
+                                infoRoster = '<b>[Absen Opsional]</b>';
+                            }
+
+                            cetakBarisLaporan(tbody, dateStr, karyawan.name, roleLbl, r, effectiveIzin, infoRoster); totalRows++;
                         }
                     });
                 });
@@ -1649,7 +1875,6 @@
             if (totalRows === 0) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-gray-500 italic font-medium">Buku laporan masih kosong untuk kriteria tersebut.</td></tr>';
         }
 
-        // Pencetak HTML baris Tr Td (Kolom Tabel Excel Web)
         function cetakBarisLaporan(tbodyHTML, dateStr, nama, labelShift, tapRecord, objIzin, noteTambahan) {
             let stringJam = '--:--', badgDisip = '', infoKolomAkhir = noteTambahan;
             if (tapRecord) {
@@ -1668,7 +1893,6 @@
         // ================= FUNGSI PENGATURAN ADMIN (SETTINGS PANEL) =================
         function toggleStrictWindowUI() {
             const isChecked = document.getElementById('set-strict-window').checked;
-            // Mematikan (disable visual) semua blok Strict window jika kotaknya uncheck
             document.querySelectorAll('.container-strict-inputs').forEach(el => {
                 if(isChecked) { el.classList.remove('opacity-40', 'pointer-events-none'); }
                 else { el.classList.add('opacity-40', 'pointer-events-none'); }
@@ -1679,18 +1903,13 @@
             const cont = document.getElementById('daily-times-container'); cont.innerHTML = '';
             let daily = {}; try { daily = JSON.parse(db.settings.daily_times || '{}'); } catch(e){} 
             
-            // Populate Toggle Aturan Wajib Absen
             document.getElementById('set-wajib-absen').checked = db.settings.wajib_absen_kosong === 'true';
             document.getElementById('set-mode-absen').value = db.settings.mode_absen_kosong || 'shift';
             document.getElementById('set-mode-absen').disabled = !(db.settings.wajib_absen_kosong === 'true');
             document.getElementById('container-mode-absen').style.opacity = (db.settings.wajib_absen_kosong === 'true') ? '1' : '0.5';
 
-            // --- FITUR BARU: POPULATE NILAI SETTING PER-UNIT UNTUK PIKET DAN STRICT WINDOW ---
-            
-            // Nilai Default Master Strict Window (Toggle Induk)
             document.getElementById('set-strict-window').checked = db.settings.strict_absen_window === 'true';
 
-            // Looping array untuk efisiensi koding 3 Unit (SD, TPQ, Tahfiz)
             ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
                 document.getElementById(`set-piket-early-${shift}`).value = db.settings[`piket_early_${shift}`] || '15';
                 document.getElementById(`set-piket-late-${shift}`).value = db.settings[`piket_late_${shift}`] || '15';
@@ -1700,13 +1919,10 @@
                 document.getElementById(`set-win-out-start-${shift}`).value = db.settings[`window_out_start_${shift}`] || '0';
                 document.getElementById(`set-win-out-end-${shift}`).value = db.settings[`window_out_end_${shift}`] || '120';
             });
-            // Update visual agar langsung abu-abu kalau ceklis strictnya mati
             toggleStrictWindowUI(); 
 
-            // Bangun kolom Input Jam Master (Hari Senin s/d Minggu)
             ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].forEach(hari => {
                 const t = daily[hari] || { sdIn: '', sdOut: '', tpqIn: '', tpqOut: '', tahfizIn: '', tahfizOut: '' };
-                
                 cont.innerHTML += `
                 <div class="border border-gray-200 rounded-lg p-3 bg-gray-50 text-[10px] shadow-sm mb-3 hover:border-gray-400 transition-colors">
                     <p class="font-bold mb-2 uppercase tracking-widest text-sm text-gray-700 flex items-center gap-1"><i class="ph ph-calendar-blank text-lg"></i> ${hari}</p>
@@ -1731,11 +1947,9 @@
             });
         }
 
-        // Tangkap Submit Form Pengaturan Admin (Parameter Waktu)
         function saveSettingsAbsen(e) {
             e.preventDefault(); 
             let daily = {};
-            // Serok (Scraping) semua isian jam master dari kotak-kotak tabel hari di layar
             ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].forEach(hari => {
                 daily[hari] = {
                     sdIn: document.querySelector(`.t-sd-i-${hari}`).value, sdOut: document.querySelector(`.t-sd-o-${hari}`).value,
@@ -1743,17 +1957,11 @@
                     tahfizIn: document.querySelector(`.t-tahfiz-i-${hari}`).value, tahfizOut: document.querySelector(`.t-tahfiz-o-${hari}`).value
                 };
             });
-            // Update db memori kita dengan string format JSON baru
             db.settings.daily_times = JSON.stringify(daily);
-            
-            // Scraping Nilai Wajib Absen
             db.settings.wajib_absen_kosong = document.getElementById('set-wajib-absen').checked ? 'true' : 'false';
             db.settings.mode_absen_kosong = document.getElementById('set-mode-absen').value;
-            
-            // Scraping Nilai Induk Strict Window
             db.settings.strict_absen_window = document.getElementById('set-strict-window').checked ? 'true' : 'false';
             
-            // --- FITUR BARU: Scraping Nilai Piket dan Strict Window Per-Unit ---
             ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
                 db.settings[`piket_early_${shift}`] = document.getElementById(`set-piket-early-${shift}`).value || '15';
                 db.settings[`piket_late_${shift}`] = document.getElementById(`set-piket-late-${shift}`).value || '15';
@@ -1764,16 +1972,13 @@
                 db.settings[`window_out_end_${shift}`] = document.getElementById(`set-win-out-end-${shift}`).value || '120';
             });
             
-            saveDB(); // Simpan Local Storage Browser
-            pushToBackend('save_settings', db.settings); // Lempar ke Google Spreadsheet API
-            showToast("Konfigurasi Seluruh Parameter Tersimpan ke Cloud.");
+            saveDB(); pushToBackend('save_settings', db.settings); showToast("Konfigurasi Seluruh Parameter Tersimpan ke Cloud.");
         }
 
-        // Modul Lock Titik Kordinat Bumi
-        function getCurrentLocationForSettings() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { document.getElementById('set-lat').value = pos.coords.latitude; document.getElementById('set-lng').value = pos.coords.longitude; showToast("Sinyal Satelit GPS Akurat milik Anda dikunci!"); }, err => alert("Izin GPS Browser Ditolak/Layanan HP off."), { enableHighAccuracy: true }); } }
+        function getCurrentLocationForSettings() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { document.getElementById('set-lat').value = pos.coords.latitude; document.getElementById('set-lng').value = pos.coords.longitude; showToast("Sinyal Satelit GPS Akurat dikunci!"); }, err => alert("Izin GPS Browser Ditolak/Layanan HP off."), { enableHighAccuracy: true }); } }
         function saveSettingsGeo(e) { e.preventDefault(); db.settings.lat = document.getElementById('set-lat').value; db.settings.lng = document.getElementById('set-lng').value; db.settings.radius = document.getElementById('set-radius').value; saveDB(); pushToBackend('save_settings', db.settings); showToast("Poligon Geofencing Area Sekolah Diamankan."); }
 
-        // Memicu Sistem untuk berjalan pertama kalinya saat elemen HTML telah selesai di-load oleh HP
+        // Start Everything!
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>

@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Import Font Inter dari Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- NEW: Import face-api.js untuk Face Recognition murni di sisi Frontend/Browser -->
+    <!-- Import face-api.js untuk Face Recognition murni di sisi Frontend/Browser -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <!-- Konfigurasi warna kustom Tailwind -->
@@ -44,7 +44,7 @@
     <div id="global-loading" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
         <i class="ph ph-spinner-gap text-5xl text-black animate-spin mb-4"></i>
         <p class="text-sm font-medium text-gray-800 font-bold" id="loading-text">Menghidupkan Mesin AI...</p>
-        <p class="text-[10px] text-gray-500 mt-1 max-w-xs text-center">Mengunduh Model Kecerdasan Buatan (Face Recognition). Mohon tunggu sejenak, butuh koneksi stabil.</p>
+        <p class="text-[10px] text-gray-500 mt-1 max-w-xs text-center">Mengunduh Model Kecerdasan Buatan. Mohon tunggu sejenak, butuh koneksi stabil.</p>
     </div>
     
     <!-- Indikator Loading Kecil di pojok kanan atas untuk sinkronisasi latar belakang -->
@@ -124,20 +124,14 @@
                 <!-- Peringatan jika sedang izin Full Day hari ini -->
                 <div id="status-izin-user" class="hidden bg-blue-50 text-blue-700 p-4 rounded-xl text-sm border border-blue-200 shadow-sm"></div>
 
-                <!-- WADAH KARTU ABSENSI DINAMIS (Muncul sesuai penugasan Unit) -->
+                <!-- WADAH KARTU ABSENSI DINAMIS -->
                 <div id="attendance-cards-container" class="space-y-4">
                     
-                    <!-- Kartu Info: Mode Absen Opsional (Jika guru sedang tidak ada jadwal) -->
-                    <div id="card-opsional-info" class="hidden bg-blue-50 border border-blue-200 p-3 rounded-lg flex gap-2 items-start shadow-sm">
-                        <i class="ph ph-info text-blue-500 text-xl"></i>
-                        <p class="text-[10px] text-blue-800 leading-tight"><b>Hari ini jadwal Anda sedang kosong / off.</b><br>Sistem memunculkan kartu unit asal Anda, namun absensi bersifat <u>Opsional (Sunnah)</u>. Tidak akan dihitung ALFA jika tidak absen.</p>
-                    </div>
-
                     <!-- Kartu Absen Unit SD -->
                     <div id="card-absen-sd" class="hidden bg-blue-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
                             <div><h3 class="text-lg font-bold text-blue-200"><i class="ph ph-sun"></i> Unit SD (Pagi)</h3></div>
-                            <span id="badge-sd" class="px-2 py-1 rounded bg-blue-950 text-xs font-medium border border-blue-800 block">-</span>
+                            <span id="badge-sd" class="px-2 py-1 rounded bg-blue-950 text-xs font-medium border border-blue-800 block text-center">-</span>
                         </div>
                         <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
                             <div class="bg-blue-950 rounded-xl p-3 border border-blue-800"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-sd">--:--</p></div>
@@ -150,7 +144,7 @@
                     <div id="card-absen-tpq" class="hidden bg-orange-800 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
                             <div><h3 class="text-lg font-bold text-orange-200"><i class="ph ph-moon"></i> Unit TPQ (Sore)</h3></div>
-                            <span id="badge-tpq" class="px-2 py-1 rounded bg-orange-900 text-xs font-medium border border-orange-700 block">-</span>
+                            <span id="badge-tpq" class="px-2 py-1 rounded bg-orange-900 text-xs font-medium border border-orange-700 block text-center">-</span>
                         </div>
                         <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
                             <div class="bg-orange-900 rounded-xl p-3 border border-orange-700"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-tpq">--:--</p></div>
@@ -163,18 +157,13 @@
                     <div id="card-absen-tahfiz" class="hidden bg-emerald-800 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
                         <div class="flex justify-between items-start mb-4">
                             <div><h3 class="text-lg font-bold text-emerald-200"><i class="ph ph-book-open text-xl"></i> Unit Tahfiz</h3></div>
-                            <span id="badge-tahfiz" class="px-2 py-1 rounded bg-emerald-900 text-xs font-medium border border-emerald-700 block">-</span>
+                            <span id="badge-tahfiz" class="px-2 py-1 rounded bg-emerald-900 text-xs font-medium border border-emerald-700 block text-center">-</span>
                         </div>
                         <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
                             <div class="bg-emerald-900 rounded-xl p-3 border border-emerald-700"><p class="text-gray-400 text-xs mb-1">Masuk</p><p class="font-semibold text-green-400" id="in-tahfiz">--:--</p></div>
                             <div class="bg-emerald-900 rounded-xl p-3 border border-emerald-700"><p class="text-gray-400 text-xs mb-1">Pulang</p><p class="font-semibold text-yellow-400" id="out-tahfiz">--:--</p></div>
                         </div>
                         <button onclick="openAbsenModal('Tahfiz')" class="w-full bg-white text-emerald-900 font-bold rounded-xl py-3 shadow hover:bg-gray-100 flex items-center justify-center gap-2"><i class="ph ph-camera text-xl"></i> Pindai AI - Absen Tahfiz</button>
-                    </div>
-
-                    <!-- Peringatan jika hari ini FULL OFF (dan admin menyetel absen wajib mati) -->
-                    <div id="card-no-schedule" class="hidden bg-gray-100 border border-gray-300 rounded-xl p-6 text-center text-gray-500">
-                        <i class="ph ph-calendar-check text-4xl mb-2 text-gray-400"></i><p class="text-sm font-bold text-gray-600">Hari Libur / Jadwal Kosong</p><p class="text-[10px] mt-1">Anda tidak memiliki kewajiban Absen untuk hari ini.</p>
                     </div>
                 </div>
 
@@ -340,6 +329,15 @@
                             </div>
                             <!-- Filter Orang Tertentu -->
                             <div><label class="text-[10px] font-bold">Cari Nama (Opsional)</label><select id="report-user-filter" class="w-full border rounded p-2 text-sm mt-1 bg-gray-50 outline-none"><option value="all">-- Massal / Semua Orang --</option></select></div>
+                            
+                            <!-- FITUR BARU: Opsi Mode Pemutihan Laporan -->
+                            <div class="mt-2 bg-green-50 p-2 border border-green-200 rounded-lg shadow-sm hover:bg-green-100 transition cursor-pointer">
+                                <label class="flex items-center gap-2 text-[10px] font-bold text-green-800 cursor-pointer w-full">
+                                    <input type="checkbox" id="report-pemutihan" class="accent-green-600 w-4 h-4 cursor-pointer">
+                                    <span><i class="ph ph-magic-wand text-sm"></i> Aktifkan Mode Pemutihan Data (Bersihkan Alfa & Terlambat)</span>
+                                </label>
+                            </div>
+
                             <div class="flex gap-2 pt-2">
                                 <button onclick="generateReport()" class="flex-1 bg-black text-white p-2 rounded text-sm font-medium shadow hover:bg-gray-800 transition">Tampilkan Data</button>
                                 <button onclick="window.print()" class="bg-white border border-black p-2 rounded text-sm font-medium hover:bg-gray-50 flex justify-center items-center gap-1 transition"><i class="ph ph-printer"></i> Cetak Kertas</button>
@@ -361,31 +359,6 @@
                 <!-- TAB: Pengaturan Aplikasi -->
                 <div id="admin-pengaturan" class="hidden space-y-6 no-print">
                     
-                    <!-- Form 1: Pengaturan Wajib Absen (Khusus Guru Kosong Jadwal) -->
-                    <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
-                        <h3 class="font-bold mb-2 flex items-center gap-2 text-red-600"><i class="ph ph-siren text-2xl"></i> Aturan Khusus: Guru Tanpa Jadwal</h3>
-                        <div class="text-[10px] text-gray-600 mb-3 space-y-1">
-                            <p>Tentukan nasib guru yang pada hari tersebut kebetulan sedang <b>TIDAK ADA</b> jadwal mengajar (Off).</p>
-                            <ul class="list-disc pl-4 text-gray-500">
-                                <li>Jika <span class="font-bold text-green-600">Dimatikan</span>: Guru yang off tombol absennya tetap muncul namun bersifat "Opsional". Mereka boleh absen jika datang, dan <u>tidak akan di-ALFA-kan</u> jika tidak absen.</li>
-                                <li>Jika <span class="font-bold text-red-600">Diaktifkan</span>: Guru yang off <u>Wajib Tetap Datang dan Absen</u> ke sekolah. Jika tidak, akan dianggap ALFA (Bolos).</li>
-                            </ul>
-                        </div>
-                        <div class="bg-red-50 border border-red-200 p-3 rounded-lg space-y-3">
-                            <label class="flex items-center gap-2 text-sm font-bold text-red-900 cursor-pointer">
-                                <input type="checkbox" id="set-wajib-absen" class="w-5 h-5 accent-red-600 cursor-pointer transition"> 
-                                Aktifkan Kewajiban Absen Kosong
-                            </label>
-                            <div id="container-mode-absen" class="pl-7 border-l-2 border-red-300 ml-2 transition-opacity duration-300">
-                                <label class="text-[10px] font-bold text-red-700 block mb-1 uppercase tracking-wider">Metode Pemaksaan Apel Kehadiran</label>
-                                <select id="set-mode-absen" class="w-full border border-red-300 rounded p-2 text-xs bg-white font-medium focus:border-red-500 outline-none cursor-pointer">
-                                    <option value="shift">Absen sesuai Unit Tugas-nya (Guru SD absen pagi, Guru TPQ absen sore)</option>
-                                    <option value="pagi">Apel Pagi Serentak! (Semua Guru, termasuk TPQ, dipaksa datang pagi untuk Tap SD)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Form 2: Pengaturan Waktu Absensi Global (Perpaduan Master Jam, Toleransi Piket, & Strict Window) -->
                     <div class="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
                         <h3 class="font-bold mb-1 flex items-center gap-2 text-blue-700"><i class="ph ph-clock text-2xl"></i> Kalibrasi Parameter Waktu & Dispensi</h3>
@@ -569,7 +542,7 @@
                     <h3 class="font-bold text-lg"><i class="ph ph-users-three"></i> Target Wajib Hadir (Hari Ini)</h3>
                     <button onclick="closeModal('modal-target-hadir')" class="p-1 hover:bg-gray-100 rounded text-gray-500"><i class="ph ph-x text-lg"></i></button>
                 </div>
-                <p class="text-[10px] text-gray-500 mb-4 bg-blue-50 p-2 rounded border border-blue-200">Sistem mengalkulasi nama-nama di bawah berdasarkan Roster Kelas hari ini, Jadwal Piket, dan Aturan Wajib Absen di menu pengaturan.</p>
+                <p class="text-[10px] text-gray-500 mb-4 bg-blue-50 p-2 rounded border border-blue-200">Sistem mengalkulasi nama-nama di bawah berdasarkan Roster Kelas hari ini, Jadwal Piket, dan Penugasan Unit dari menu Profil Pengguna.</p>
                 <div id="list-target-hadir" class="space-y-4"></div>
             </div>
         </div>
@@ -641,7 +614,7 @@
         <!-- Modal Pilih Piket Manual -->
         <div id="modal-add-piket" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl"><h3 class="font-bold mb-4 border-b pb-2">Penugasan Piket Manual</h3><form id="form-piket" class="space-y-3"><input type="hidden" id="piket-id"><div><label class="text-xs font-medium">Hari Aktif</label><input type="text" id="piket-hari-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 text-gray-500 font-bold"></div><div><label class="text-xs font-medium">Unit (Shift)</label><input type="text" id="piket-shift-display" disabled class="w-full border rounded p-2 mt-1 bg-gray-100 text-gray-500 font-bold"></div><div><label class="text-xs font-medium text-blue-600">Pilih Guru</label><select id="piket-guru" required class="w-full border rounded p-2 mt-1 outline-none"></select></div><div class="flex gap-2 pt-3"><button type="button" onclick="closeModal('modal-add-piket')" class="flex-1 bg-gray-200 py-2 rounded text-sm">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded text-sm shadow">Tugaskan</button></div></form></div></div>
         
-        <!-- Modal Sisip Jadwal Manual (Telah diperbarui fiturnya) -->
+        <!-- Modal Sisip Jadwal Manual -->
         <div id="modal-add-jadwal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="bg-white rounded-xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
                 <h3 class="font-bold border-b pb-2 text-blue-700 flex items-center gap-1"><i class="ph ph-calendar-plus text-xl"></i> Sisip Jadwal Manual</h3>
@@ -676,8 +649,42 @@
         <!-- Modal Form Pengajuan Izin -->
         <div id="modal-ajukan-izin" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto"><h3 class="font-bold mb-4 border-b pb-2"><i class="ph ph-envelope-open text-xl"></i> Form Pengajuan Izin/Cuti</h3><form id="form-izin" class="space-y-4"><div class="bg-gray-50 p-2 rounded border border-gray-200"><label class="text-[10px] font-bold block mb-2">Tipe Durasi Izin</label><div class="flex gap-3 text-sm"><label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="izinTipe" value="Full" checked onchange="toggleIzinTipe()" class="accent-black"> Sehari/Lebih (Full)</label><label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="izinTipe" value="Parsial" onchange="toggleIzinTipe()" class="accent-black"> Parsial (Beberapa Jam)</label></div></div><div id="izin-container-full" class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold">Tanggal Mulai</label><input type="date" id="izin-start-date" required class="w-full border rounded p-2 mt-1 bg-white outline-none"></div><div><label class="text-[10px] font-bold">Tanggal Selesai</label><input type="date" id="izin-end-date" required class="w-full border rounded p-2 mt-1 bg-white outline-none"></div></div><div id="izin-container-parsial" class="hidden space-y-3"><div><label class="text-[10px] font-bold">Tanggal Izin</label><input type="date" id="izin-single-date" class="w-full border rounded p-2 mt-1 bg-white outline-none"></div><div class="grid grid-cols-2 gap-2"><div><label class="text-[10px] font-bold">Dari Jam</label><input type="time" id="izin-start-time" class="w-full border rounded p-2 mt-1 outline-none"></div><div><label class="text-[10px] font-bold">Sampai Jam</label><input type="time" id="izin-end-time" class="w-full border rounded p-2 mt-1 outline-none"></div></div></div><div><label class="text-[10px] font-bold">Alasan Lengkap</label><textarea id="izin-alasan" rows="3" required class="w-full border rounded p-2 mt-1 resize-none outline-none" placeholder="Tuliskan detail alasan..."></textarea></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal('modal-ajukan-izin')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm transition hover:bg-gray-300">Batal</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded-lg text-sm shadow transition hover:bg-gray-800">Kirim Pengajuan</button></div></form></div></div>
         
-        <!-- Modal Admin Verifikasi Izin -->
-        <div id="modal-proses-izin" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl"><h3 class="font-bold mb-4 border-b pb-2"><i class="ph ph-stamp"></i> Tindak Lanjut Izin</h3><form id="form-proses-izin" class="space-y-3"><input type="hidden" id="proses-izin-id"><div class="bg-blue-50 border p-3 rounded-lg text-sm shadow-inner"><p class="font-bold text-blue-900" id="pi-nama">-</p><p class="text-[10px] text-blue-600 font-bold bg-blue-100 border border-blue-200 inline-block px-1.5 py-0.5 rounded mt-1" id="pi-waktu">-</p><p class="mt-2 text-gray-800 italic text-xs" id="pi-alasan">-</p></div><div><label class="text-[10px] font-bold">Keputusan Pimpinan</label><select id="pi-status" required class="w-full border rounded p-2 mt-1 font-bold outline-none" onchange="toggleInvalSelect()"><option value="Disetujui">SAH - Setujui Izin</option><option value="Ditolak">TOLAK / BATALKAN</option></select></div><div id="container-inval" class="mt-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 shadow-sm transition-opacity"><label class="text-xs font-bold text-yellow-800"><i class="ph ph-arrows-merge"></i> Mandat Guru Inval Pengganti</label><p class="text-[9px] text-yellow-700 mt-0.5 mb-1">Pilih guru yang akan menggantikan kelasnya selama izin.</p><select id="pi-pengganti" class="w-full border border-yellow-300 rounded p-2 mt-1 outline-none text-sm"></select></div><div class="flex gap-2 pt-3 mt-2"><button type="button" onclick="closeModal('modal-proses-izin')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm hover:bg-gray-300">Tunda Dulu</button><button type="submit" class="flex-1 bg-black text-white py-2 rounded-lg text-sm shadow hover:bg-gray-800">Kunci Keputusan</button></div></form></div></div>
+        <!-- Modal Admin Verifikasi Izin (Dengan Fitur Inval Dinamis) -->
+        <div id="modal-proses-izin" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+                <h3 class="font-bold mb-4 border-b pb-2"><i class="ph ph-stamp"></i> Tindak Lanjut Izin</h3>
+                <form id="form-proses-izin" class="space-y-3">
+                    <input type="hidden" id="proses-izin-id">
+                    <div class="bg-blue-50 border p-3 rounded-lg text-sm shadow-inner">
+                        <p class="font-bold text-blue-900" id="pi-nama">-</p>
+                        <p class="text-[10px] text-blue-600 font-bold bg-blue-100 border border-blue-200 inline-block px-1.5 py-0.5 rounded mt-1" id="pi-waktu">-</p>
+                        <p class="mt-2 text-gray-800 italic text-xs" id="pi-alasan">-</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold">Keputusan Pimpinan</label>
+                        <select id="pi-status" required class="w-full border rounded p-2 mt-1 font-bold outline-none" onchange="toggleInvalSelect()">
+                            <option value="Disetujui">SAH - Setujui Izin</option>
+                            <option value="Ditolak">TOLAK / BATALKAN</option>
+                        </select>
+                    </div>
+                    
+                    <!-- FITUR BARU: INVAL DINAMIS (Per Tanggal, Per Shift) -->
+                    <div id="container-inval" class="mt-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 shadow-sm transition-opacity hidden">
+                        <label class="text-xs font-bold text-yellow-800 flex items-center gap-1"><i class="ph ph-arrows-merge"></i> Penunjukan Guru Pengganti (Inval)</label>
+                        <p class="text-[9px] text-yellow-700 mt-0.5 mb-2 leading-tight">Sistem mendeteksi jadwal mengajar guru ini di tanggal izinnya. Anda bisa menunjuk orang yang berbeda di setiap Unit/Tanggal.</p>
+                        
+                        <div id="dynamic-inval-list" class="space-y-3 max-h-40 overflow-y-auto pr-1">
+                            <!-- Dropdown dinamis akan digambar via Javascript di sini -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 pt-3 mt-2 border-t">
+                        <button type="button" onclick="closeModal('modal-proses-izin')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm hover:bg-gray-300 font-bold">Batal / Tunda</button>
+                        <button type="submit" class="flex-1 bg-black text-white py-2 rounded-lg text-sm shadow hover:bg-gray-800 font-bold">Kunci Keputusan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Pop-up Toast Notifikasi Sukses/Error Kecil di atas layar -->
         <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-[100] text-sm font-medium text-center hidden flex items-center gap-2 border border-gray-800">
@@ -690,7 +697,7 @@
         // Masukkan URL Web App Google Apps Script Anda di sini (Pastikan diakhiri /exec).
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbyNtcaWQbL95Y7b2GvcQkhCIUOgl_IoRA3CwMNWAHNyaXq-lZFjUdEInnMdXVC-afR8YQ/exec';
         // Kunci penyimpanan lokal di browser HP pengguna (berperan sebagai cache)
-        const DB_KEY = 'tafdhil_ultimate_db_v9';
+        const DB_KEY = 'tafdhil_ultimate_db_v10';
 
         // Variabel global tempat menampung seluruh data dari server
         let db = {
@@ -698,7 +705,7 @@
             // Defaults (Nilai awal) jika database di server belum berisi apa-apa
             settings: { 
                 lat: '', lng: '', radius: '100', daily_times: '{}', roster_config: '{}', 
-                wajib_absen_kosong: 'false', mode_absen_kosong: 'shift',
+                wajib_absen_kosong: 'false', mode_absen_kosong: 'shift', // <-- Parameter lama, mulai tak dipakai di logika tapi dibiarkan agar DB tidak crash
                 strict_absen_window: 'false',
                 piket_early_SD: '15', piket_late_SD: '15', window_in_start_SD: '60', window_in_end_SD: '60', window_out_start_SD: '0', window_out_end_SD: '120',
                 piket_early_TPQ: '15', piket_late_TPQ: '15', window_in_start_TPQ: '60', window_in_end_TPQ: '60', window_out_start_TPQ: '0', window_out_end_TPQ: '120',
@@ -743,17 +750,11 @@
                 alert("Kesalahan Sistem: Tidak dapat memuat model Kecerdasan Buatan. Pastikan Anda memiliki koneksi internet yang stabil.");
             }
 
-            // 3. Beri aksi pada toggle 'Wajib Absen' di menu pengaturan admin agar animasi opacitynya interaktif
-            document.getElementById('set-wajib-absen').addEventListener('change', function() {
-               document.getElementById('container-mode-absen').style.opacity = this.checked ? '1' : '0.5';
-               document.getElementById('set-mode-absen').disabled = !this.checked;
-            });
-
-            // 4. Cek apakah ada sesi login
+            // 3. Cek apakah ada sesi login
             const session = localStorage.getItem('tafdhil_session');
             if (session) { currentUser = JSON.parse(session); routeUser(); } else navTo('login'); 
             
-            // 5. Lakukan sinkronisasi tarikan data dari Server (Google Sheet)
+            // 4. Lakukan sinkronisasi tarikan data dari Server (Google Sheet)
             if (GAS_URL) {
                 document.getElementById('loading-text').innerText = "Sinkronisasi Database Cloud...";
                 await forceSync(true); // Tarik data diam-diam tanpa memblokir layar lama-lama
@@ -764,7 +765,7 @@
             
             setInterval(updateClock, 1000);
 
-            // 6. Pasang "telinga" (Event Listener) pada semua tombol "Submit" di form-form modal
+            // 5. Pasang "telinga" (Event Listener) pada semua tombol "Submit" di form-form modal
             document.getElementById('login-form').addEventListener('submit', handleLogin);
             document.getElementById('form-user').addEventListener('submit', saveUser);
             document.getElementById('form-kelas').addEventListener('submit', saveKelas);
@@ -812,8 +813,6 @@
                     
                     if(!db.settings.daily_times) db.settings.daily_times = "{}";
                     if(!db.settings.roster_config) db.settings.roster_config = "{}";
-                    if(!db.settings.wajib_absen_kosong) db.settings.wajib_absen_kosong = 'false';
-                    if(!db.settings.mode_absen_kosong) db.settings.mode_absen_kosong = 'shift';
                     if(!db.settings.strict_absen_window) db.settings.strict_absen_window = 'false';
                     
                     saveDB(); 
@@ -843,6 +842,40 @@
         function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.remove('opacity-0', '-translate-y-4'), 10); setTimeout(() => { t.classList.add('opacity-0', '-translate-y-4'); setTimeout(() => t.classList.add('hidden'), 300); }, 4000); }
         function navTo(v) { ['view-login', 'view-public', 'view-guru', 'view-admin'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById(`view-${v}`).classList.remove('hidden'); if (v === 'public') renderPublicBoard('hari_ini'); }
 
+        // Generator ID Unik Tangguh (Mencegah Bentrok Database)
+        function generateId(prefix) { return prefix + '_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7); }
+
+        // ================= FUNGSI BANTUAN LOGIKA INVAL (PENGGANTI) =================
+        
+        // Membaca object JSON dari string di kolom substituteId (atau konversi string lama jadi objek kosong)
+        function parseSubstituteJson(str) {
+            if (!str) return {};
+            try {
+                if (str.startsWith('{')) return JSON.parse(str);
+                return {}; // Jika itu format lama (string u_123), acuhkan saja karena sudah obsolete
+            } catch(e) { return {}; }
+        }
+
+        // Cek apakah guru tertentu sedang ditunjuk sebagai INVAL (Pengganti) pada Tanggal dan Shift tertentu?
+        function amITheSubstitute(targetUserId, dateStr, shift) {
+            let izinLulus = db.izin.filter(i => i.status === 'Disetujui' && i.substituteId && i.substituteId.includes(targetUserId));
+            for(let iz of izinLulus) {
+                // Cek apakah dateStr masuk dalam rentang izin ini
+                let isValidDate = false;
+                if (iz.type === 'Full') { if (dateStr >= iz.startDate && dateStr <= iz.endDate) isValidDate = true; } 
+                else { if (iz.startDate === dateStr) isValidDate = true; }
+                
+                if (isValidDate) {
+                    let subObj = parseSubstituteJson(iz.substituteId);
+                    // Cek di kamus subObj, apakah pada Tanggal(dateStr) dan Unit(shift) ini namanya targetUserId?
+                    if (subObj[dateStr] && subObj[dateStr][shift] === targetUserId) {
+                        return { originalOwner: iz.userId, izinId: iz.id };
+                    }
+                }
+            }
+            return null; // Tidak ditunjuk
+        }
+
         // ================= FUNGSI PENGGAMBARAN JADWAL PUBLIK =================
         function renderPublicBoard(filter) {
             document.getElementById('btn-pub-hari_ini').className = filter === 'hari_ini' ? "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 pill-active" : "px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-white text-gray-600";
@@ -861,17 +894,20 @@
 
             for (const classId in grouped) {
                 const kelasInfo = db.classes.find(c => c.id === classId); if(!kelasInfo) continue; 
+                const shiftUnit = kelasInfo.shift || 'SD';
                 
                 let bgHeader = 'bg-blue-50', borderHeader = 'border-blue-100', textHeader = 'text-blue-900', bgBadge = 'bg-blue-200', textBadge = 'text-blue-800';
-                if (kelasInfo.shift === 'TPQ') { bgHeader='bg-orange-50'; borderHeader='border-orange-100'; textHeader='text-orange-900'; bgBadge='bg-orange-200'; textBadge='text-orange-800'; }
-                else if (kelasInfo.shift === 'Tahfiz') { bgHeader='bg-emerald-50'; borderHeader='border-emerald-100'; textHeader='text-emerald-900'; bgBadge='bg-emerald-200'; textBadge='text-emerald-800'; }
+                if (shiftUnit === 'TPQ') { bgHeader='bg-orange-50'; borderHeader='border-orange-100'; textHeader='text-orange-900'; bgBadge='bg-orange-200'; textBadge='text-orange-800'; }
+                else if (shiftUnit === 'Tahfiz') { bgHeader='bg-emerald-50'; borderHeader='border-emerald-100'; textHeader='text-emerald-900'; bgBadge='bg-emerald-200'; textBadge='text-emerald-800'; }
 
-                let html = `<div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden"><div class="${bgHeader} border-b ${borderHeader} px-4 py-2 flex justify-between items-center"><h3 class="font-bold ${textHeader}">${kelasInfo.name}</h3><span class="text-[10px] font-bold ${bgBadge} ${textBadge} px-2 py-0.5 rounded-full uppercase tracking-wider">${kelasInfo.shift || 'SD'}</span></div><div class="divide-y divide-gray-100 p-2">`;
+                let html = `<div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden"><div class="${bgHeader} border-b ${borderHeader} px-4 py-2 flex justify-between items-center"><h3 class="font-bold ${textHeader}">${kelasInfo.name}</h3><span class="text-[10px] font-bold ${bgBadge} ${textBadge} px-2 py-0.5 rounded-full uppercase tracking-wider">${shiftUnit}</span></div><div class="divide-y divide-gray-100 p-2">`;
                 
                 let scheds = grouped[classId].sort((a, b) => a.startTime.localeCompare(b.startTime));
                 
                 scheds.forEach(s => {
                     const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+                    
+                    // Cek apakah guru aslinya izin
                     const izinTerkait = db.izin.find(i => {
                         if (i.userId !== s.teacherId || i.status !== 'Disetujui' || !i.substituteId) return false;
                         if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
@@ -879,7 +915,17 @@
                     });
                     
                     let namaGuruHTML = `<i class="ph ph-chalkboard-teacher"></i> ${getTeacherName(s.teacherId)}`;
-                    if(izinTerkait) namaGuruHTML = `<i class="ph ph-arrows-merge text-yellow-600"></i> <span class="text-yellow-700 font-bold bg-yellow-50 px-1 rounded border border-yellow-200">Inval: ${getTeacherName(izinTerkait.substituteId)}</span>`;
+                    
+                    if(izinTerkait) {
+                        let subObj = parseSubstituteJson(izinTerkait.substituteId);
+                        let subUserId = (subObj[dateStr] && subObj[dateStr][shiftUnit]) ? subObj[dateStr][shiftUnit] : null;
+
+                        if (subUserId) {
+                            namaGuruHTML = `<i class="ph ph-arrows-merge text-yellow-600"></i> <span class="text-yellow-700 font-bold bg-yellow-50 px-1 rounded border border-yellow-200">Inval: ${getTeacherName(subUserId)}</span>`;
+                        } else {
+                            namaGuruHTML = `<i class="ph ph-x-circle text-red-500"></i> <span class="text-red-500 line-through">${getTeacherName(s.teacherId)} (Cuti Kosong)</span>`;
+                        }
+                    }
 
                     html += `<div class="flex items-center p-2 gap-3 hover:bg-gray-50 transition rounded"><div class="bg-gray-100 border border-gray-200 text-gray-800 text-[10px] font-bold font-mono px-2 py-1.5 rounded text-center min-w-[90px] shadow-inner">${s.startTime} - ${s.endTime}</div><div class="flex-1"><p class="text-sm font-bold text-gray-900">${getSubjectName(s.subjectId)}</p><p class="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">${namaGuruHTML}</p></div></div>`;
                 });
@@ -938,13 +984,13 @@
             
             const today = getTodayName(), dateStr = getTodayDateStr();
 
-            // CEK REGISTRASI WAJAH GURU (Baru!)
+            // CEK REGISTRASI WAJAH GURU 
             const boxFaceAlert = document.getElementById('alert-face-register');
             if (role !== 'admin') {
                 if (!currentUser.face_data || currentUser.face_data.length < 10) {
-                    boxFaceAlert.classList.remove('hidden'); // Munculkan tombol daftar wajah
+                    boxFaceAlert.classList.remove('hidden'); 
                 } else {
-                    boxFaceAlert.classList.add('hidden'); // Sudah daftar, sembunyikan.
+                    boxFaceAlert.classList.add('hidden'); 
                 }
             }
 
@@ -972,9 +1018,17 @@
                 if (izinTerbaru.status === 'Pending') {
                     statusText = 'Masih Menunggu Peninjauan Kepala/Admin'; bgColor = 'bg-yellow-50 border-yellow-200 text-yellow-800'; icon = '<i class="ph ph-hourglass-high animate-pulse"></i>';
                 } else if (izinTerbaru.status === 'Disetujui') {
-                    const pengganti = db.users.find(u => u.id === izinTerbaru.substituteId);
-                    const namaPengganti = pengganti ? pengganti.name : '<i>Admin tidak menetapkan Inval</i>';
-                    statusText = `Disetujui. Digantikan oleh: <b>${namaPengganti}</b>`; bgColor = 'bg-green-50 border-green-200 text-green-800'; icon = '<i class="ph ph-check-circle"></i>';
+                    // Cek Inval di hari pertama cutinya (sebagai sampel aja)
+                    let subObj = parseSubstituteJson(izinTerbaru.substituteId);
+                    let sampleSub = '';
+                    if(subObj[izinTerbaru.startDate]) {
+                         if(subObj[izinTerbaru.startDate]['SD']) sampleSub += getTeacherName(subObj[izinTerbaru.startDate]['SD']) + ' (SD) ';
+                         if(subObj[izinTerbaru.startDate]['TPQ']) sampleSub += getTeacherName(subObj[izinTerbaru.startDate]['TPQ']) + ' (TPQ) ';
+                         if(subObj[izinTerbaru.startDate]['Tahfiz']) sampleSub += getTeacherName(subObj[izinTerbaru.startDate]['Tahfiz']) + ' (Tahfiz) ';
+                    }
+                    if(!sampleSub.trim()) sampleSub = '<i>Admin tidak menetapkan Inval</i>';
+
+                    statusText = `Disetujui. Inval: <b>${sampleSub}</b>`; bgColor = 'bg-green-50 border-green-200 text-green-800'; icon = '<i class="ph ph-check-circle"></i>';
                 } else {
                     statusText = 'Surat Izin Ditolak/Dibatalkan.'; bgColor = 'bg-red-50 border-red-200 text-red-800'; icon = '<i class="ph ph-warning-circle"></i>';
                 }
@@ -990,21 +1044,23 @@
             const cSD = document.getElementById('card-absen-sd');
             const cTPQ = document.getElementById('card-absen-tpq');
             const cTahfiz = document.getElementById('card-absen-tahfiz');
-            const cNo = document.getElementById('card-no-schedule');
-            const cOpsional = document.getElementById('card-opsional-info');
             const badgePiket = document.getElementById('guru-piket-badge');
 
-            [rosterEl, cSD, cTPQ, cTahfiz, cNo, cOpsional, badgePiket].forEach(el => el.classList.add('hidden'));
+            [rosterEl, cSD, cTPQ, cTahfiz, badgePiket].forEach(el => el.classList.add('hidden'));
 
             const records = db.attendance.filter(a => a.userId === currentUser.id && a.date === dateStr);
-            let hasSD = false, hasTPQ = false, hasTahfiz = false, isOpsionalOnly = false;
             
+            // PERBAIKAN REQ 1: KEMUNCULAN KARTU ABSEN HANYA BERDASARKAN PROFIL USER!
             const myUnits = currentUser.unit ? currentUser.unit.split(',') : [];
+            let hasSD = myUnits.includes('SD');
+            let hasTPQ = myUnits.includes('TPQ');
+            let hasTahfiz = myUnits.includes('Tahfiz');
+
+            let isScheduledSD = false, isScheduledTPQ = false, isScheduledTahfiz = false;
 
             if (role === 'tendik') {
-                if (myUnits.includes('SD')) hasSD = true;
-                if (myUnits.includes('TPQ')) hasTPQ = true;
-                if (myUnits.includes('Tahfiz')) hasTahfiz = true;
+                // Tendik tak ada roster kelas, maka langsung saja ikut unit profilnya (sdh dihandle)
+                isScheduledSD = hasSD; isScheduledTPQ = hasTPQ; isScheduledTahfiz = hasTahfiz;
             } 
             else {
                 rosterEl.classList.remove('hidden'); 
@@ -1014,21 +1070,25 @@
                     let dayScheds = db.schedules.filter(s => s.teacherId === currentUser.id && s.day === hari).map(s => ({ ...s, inval: false }));
                     
                     if (hari === today) {
-                        const invalForMe = db.izin.filter(i => {
-                            if (i.substituteId !== currentUser.id || i.status !== 'Disetujui') return false;
-                            if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate);
-                            return (i.startDate === dateStr);
-                        });
-                        invalForMe.forEach(iz => {
-                            const izScheds = db.schedules.filter(s => s.teacherId === iz.userId && s.day === hari).map(s => ({ ...s, inval: true, originalOwner: iz.userId }));
-                            dayScheds = dayScheds.concat(izScheds);
+                        // CEK APAKAH GURU INI DITUNJUK JADI INVAL HARI INI?
+                        // Lakukan loop pada semua mata pelajaran/kelas dari guru yang asli
+                        db.schedules.filter(s => s.day === hari).forEach(s => {
+                            const cInfo = db.classes.find(x => x.id === s.classId);
+                            const uInfo = cInfo ? (cInfo.shift || 'SD') : 'SD';
+                            
+                            // Tanya Fungsi Bantuan Inval
+                            let amIInval = amITheSubstitute(currentUser.id, dateStr, uInfo);
+                            // Validasi tambahan: Hanya curi kelas jika memang guru aslinya adalah orang yg izin tsb
+                            if (amIInval && amIInval.originalOwner === s.teacherId) {
+                                dayScheds.push({ ...s, inval: true, originalOwner: s.teacherId });
+                            }
                         });
                     }
                     
                     dayScheds.sort((a, b) => a.startTime.localeCompare(b.startTime));
                     dayScheds.forEach(s => {
                         const c = db.classes.find(x => x.id === s.classId); const unitSft = c ? (c.shift||'SD') : 'SD';
-                        if (hari === today) { if(unitSft==='SD') hasSD=true; else if(unitSft==='TPQ') hasTPQ=true; else hasTahfiz=true; }
+                        if (hari === today) { if(unitSft==='SD') isScheduledSD=true; else if(unitSft==='TPQ') isScheduledTPQ=true; else isScheduledTahfiz=true; }
                         
                         const badge = s.inval ? `<span class="bg-yellow-100 border border-yellow-300 text-yellow-700 text-[9px] px-1.5 py-0.5 rounded ml-1 shadow-sm"><i class="ph ph-arrows-merge"></i> Inval Mandat</span>` : '';
                         fullListEl.innerHTML += `<div class="bg-white border p-3 rounded-lg flex justify-between items-center mb-2 shadow-sm hover:border-gray-400 transition-colors"><div><p class="font-bold text-[9px] text-gray-500 uppercase tracking-widest">${hari} - ${unitSft}</p><p class="font-bold text-sm text-black leading-tight mt-0.5">${getSubjectName(s.subjectId)} ${badge}</p><p class="text-[10px] text-gray-500 mt-1"><i class="ph ph-chalkboard"></i> ${getClassName(s.classId)}</p></div><div class="text-xs font-mono font-bold bg-gray-50 border border-gray-200 px-2 py-1.5 rounded shadow-inner text-gray-700">${s.startTime} - ${s.endTime}</div></div>`;
@@ -1036,30 +1096,11 @@
                 });
 
                 const myPickets = db.pickets.filter(p => p.userId === currentUser.id && p.day === today);
-                myPickets.forEach(p => { if(p.shift === 'SD') hasSD = true; if(p.shift === 'TPQ') hasTPQ = true; if(p.shift === 'Tahfiz') hasTahfiz = true; });
+                myPickets.forEach(p => { if(p.shift === 'SD') isScheduledSD = true; if(p.shift === 'TPQ') isScheduledTPQ = true; if(p.shift === 'Tahfiz') isScheduledTahfiz = true; });
                 if (myPickets.length > 0) badgePiket.classList.remove('hidden');
-
-                // PERBAIKAN BUG No 2 (ABSEN OPSIONAL): Jika dia tidak ada roster dan piket (Off)
-                if (!hasSD && !hasTPQ && !hasTahfiz) {
-                    const isWajibAbsen = db.settings.wajib_absen_kosong === 'true';
-                    
-                    // Terlepas dari dia wajib apel atau opsional sunnah, SISTEM HARUS SELALU memunculkan kartu absen berdasarkan profil (myUnits) nya!
-                    if (myUnits.includes('SD')) hasSD = true;
-                    if (myUnits.includes('TPQ')) hasTPQ = true;
-                    if (myUnits.includes('Tahfiz')) hasTahfiz = true;
-
-                    if (isWajibAbsen) {
-                        const mode = db.settings.mode_absen_kosong; 
-                        if (mode === 'pagi') { hasSD = true; } // Paksa absen pagi walo dia guru TPQ
-                    } else { 
-                        // Jika bebas/tidak wajib absen, munculkan kartu info biru yang mengatakan absen opsional
-                        isOpsionalOnly = true;
-                        cOpsional.classList.remove('hidden'); 
-                    }
-                }
             }
 
-            function setupCard(unitName, cardEl, inEl, outEl, badgeEl, colorClasses) {
+            function setupCard(unitName, cardEl, inEl, outEl, badgeEl, colorClasses, isScheduled) {
                 cardEl.classList.remove('hidden'); 
                 const rec = records.find(r => r.shift === unitName); 
                 
@@ -1068,19 +1109,17 @@
                 
                 const b = document.getElementById(badgeEl);
                 if(!rec) { 
-                    b.innerText = isOpsionalOnly ? "TIDAK WAJIB" : "BELUM SCAN"; 
-                    b.className = `px-2 py-1 rounded text-xs font-medium block ${colorClasses.empty}`; 
+                    if(isScheduled) { b.innerText = "BELUM SCAN"; b.className = `px-2 py-1 rounded text-xs font-medium block ${colorClasses.empty}`; }
+                    else { b.innerText = "JADWAL OFF / KOSONG (BISA SCAN)"; b.className = `px-2 py-1 rounded text-[10px] font-bold block bg-gray-100 text-gray-600 border border-gray-300 shadow-inner`; }
                 }
                 else if(rec.disiplin==='Terlambat') { b.innerText="TERLAMBAT"; b.className="px-2 py-1 rounded bg-red-500 text-xs text-white font-bold block animate-pulse shadow-md"; }
                 else { b.innerText="TEPAT WAKTU"; b.className="px-2 py-1 rounded bg-green-500 text-xs text-white font-bold block shadow-md"; }
             }
 
-            if (hasSD) setupCard('SD', cSD, 'in-sd', 'out-sd', 'badge-sd', {empty: 'bg-blue-950 text-blue-200 border border-blue-800'});
-            if (hasTPQ) setupCard('TPQ', cTPQ, 'in-tpq', 'out-tpq', 'badge-tpq', {empty: 'bg-orange-900 text-orange-200 border border-orange-700'});
-            if (hasTahfiz) setupCard('Tahfiz', cTahfiz, 'in-tahfiz', 'out-tahfiz', 'badge-tahfiz', {empty: 'bg-emerald-900 text-emerald-200 border border-emerald-700'});
+            if (hasSD) setupCard('SD', cSD, 'in-sd', 'out-sd', 'badge-sd', {empty: 'bg-blue-950 text-blue-200 border border-blue-800'}, isScheduledSD);
+            if (hasTPQ) setupCard('TPQ', cTPQ, 'in-tpq', 'out-tpq', 'badge-tpq', {empty: 'bg-orange-900 text-orange-200 border border-orange-700'}, isScheduledTPQ);
+            if (hasTahfiz) setupCard('Tahfiz', cTahfiz, 'in-tahfiz', 'out-tahfiz', 'badge-tahfiz', {empty: 'bg-emerald-900 text-emerald-200 border border-emerald-700'}, isScheduledTahfiz);
             
-            // Jaring pengaman mutlak (Tendik tanpa profil unit yg dipilih)
-            if (role === 'tendik' && !hasSD && !hasTPQ && !hasTahfiz) cNo.classList.remove('hidden');
         }
 
         // ================= FITUR BARU: REGISTRASI WAJAH AI =================
@@ -1186,7 +1225,7 @@
             btn.className = "w-full bg-gray-300 text-gray-500 font-bold rounded-xl py-3 flex justify-center items-center gap-2 transition-all cursor-not-allowed";
             
             geoStatus.innerHTML = `<i class="ph ph-spinner-gap animate-spin"></i> Mencari Satelit GPS...`; 
-            faceStatus.innerHTML = `<i class="ph ph-eye-slash text-yellow-400"></i> Analisis Wajah AI...`; 
+            faceStatus.innerHTML = `<i class="ph ph-eye-slash text-yellow-400"></i> Analisis Wajah...`; 
             geoDist.classList.add('hidden'); geoAcc.classList.add('hidden');
 
             let isGpsLolos = false; // Flag apakah lolos GPS
@@ -1348,7 +1387,8 @@
                     if (timeToMins(timeStr) > targetMasukToleransi) disiplin = 'Terlambat';
                 }
 
-                record = { id: 'abs_' + Date.now(), userId: currentUser.id, date: dateStr, shift: shiftID, timeIn: timeStr, timeOut: "", location: tempLocation, status: "Masuk", disiplin: disiplin };
+                // PERBAIKAN REQ 4: Gunakan generateId alih-alih Date.now() polos
+                record = { id: generateId('abs'), userId: currentUser.id, date: dateStr, shift: shiftID, timeIn: timeStr, timeOut: "", location: tempLocation, status: "Masuk", disiplin: disiplin };
                 db.attendance.push(record);
                 showToast(`Absen Masuk ${shiftID} terekam sukses.`);
             } 
@@ -1393,7 +1433,7 @@
         
         function ajukanIzin(e) {
             e.preventDefault(); const tipe = document.querySelector('input[name="izinTipe"]:checked').value;
-            let payload = { id: 'iz_' + Date.now(), userId: currentUser.id, type: tipe, status: 'Pending', substituteId: '', reason: document.getElementById('izin-alasan').value };
+            let payload = { id: generateId('iz'), userId: currentUser.id, type: tipe, status: 'Pending', substituteId: '', reason: document.getElementById('izin-alasan').value };
             
             if (tipe === 'Full') { 
                 payload.startDate = document.getElementById('izin-start-date').value; payload.endDate = document.getElementById('izin-end-date').value; payload.startTime = ''; payload.endTime = ''; 
@@ -1463,7 +1503,6 @@
                 document.getElementById('user-jabatan').value = u.jabatan || '';
                 document.getElementById('user-face-data').value = u.face_data || '';
                 
-                // Jika user ini sudah punya rekaman wajah, berikan admin opsi menghapusnya
                 if (u.face_data && u.face_data.length > 10) { btnResetWajah.classList.remove('hidden'); } else { btnResetWajah.classList.add('hidden'); }
 
                 const uUnits = u.unit ? u.unit.split(',') : [];
@@ -1483,11 +1522,10 @@
             toggleUserRoleFields(); showModal('modal-add-user');
         }
 
-        // Fitur tombol admin menghapus paksa biometrik wajah guru dari profile form
         function hapusWajahUser() {
             if(confirm("Apakah Anda yakin menghapus data Wajah biometrik ini? Pengguna harus melakukan pendaftaran ulang lewat aplikasinya agar bisa absen kembali.")) {
-                document.getElementById('user-face-data').value = ''; // Kosongkan hidden input
-                document.getElementById('admin-face-reset-area').classList.add('hidden'); // Sembunyikan tombolnya
+                document.getElementById('user-face-data').value = ''; 
+                document.getElementById('admin-face-reset-area').classList.add('hidden'); 
                 showToast("Data wajah di formulir telah dikosongkan. Silakan klik tombol 'Simpan Data' hitam di bawah untuk menyimpan perubahan ini ke database.");
             }
         }
@@ -1512,14 +1550,14 @@
                 const idx = db.users.findIndex(u => u.id === id); 
                 if (idx > -1) { 
                     db.users[idx].name = name; db.users[idx].username = uname; db.users[idx].role = role; db.users[idx].subjects = subsStr; db.users[idx].unit = unitStr; db.users[idx].jabatan = jabatan; 
-                    db.users[idx].face_data = savedFaceData; // Timpa wajah baru (atau string kosong jika dihapus)
+                    db.users[idx].face_data = savedFaceData; 
                     if (pass) db.users[idx].password = pass; 
                     payload = db.users[idx]; 
                 } 
                 showToast("Akun Diperbarui."); 
             } else { 
                 if (db.users.find(u => u.username === uname)) return alert("Username sudah terpakai oleh orang lain. Pilih yang unik."); 
-                payload = { id: 'u_' + Date.now(), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr, jabatan: jabatan, face_data: '' }; 
+                payload = { id: generateId('u'), name, username: uname, password: pass, role: role, subjects: subsStr, unit: unitStr, jabatan: jabatan, face_data: '' }; 
                 db.users.push(payload); showToast("Akun Baru Dibuat."); 
             } 
             saveDB(); pushToBackend('save_user', payload); closeModal('modal-add-user'); renderAdminUser(role); 
@@ -1540,7 +1578,6 @@
                 
                 let extraInfo = g.role === 'tendik' && g.jabatan ? `<p class="text-[10px] text-orange-600 font-bold mb-1">${g.jabatan}</p>` : '';
                 
-                // Lencana Face Recognition status
                 let badgeFace = (g.face_data && g.face_data.length > 10) ? `<span class="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-1 rounded flex items-center gap-1 mt-1 w-max shadow-sm"><i class="ph ph-scan"></i> AI Wajah: Ready</span>` : `<span class="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1 rounded flex items-center gap-1 mt-1 w-max shadow-sm"><i class="ph ph-warning-circle"></i> AI Wajah: Belum Daftar</span>`;
 
                 listEl.innerHTML += `<div class="bg-white border p-3 rounded-xl flex justify-between items-center shadow-sm hover:border-gray-400 transition-colors"><div><p class="font-bold text-sm text-gray-800">${g.name}</p>${extraInfo}<p class="text-[11px] text-gray-500 font-mono"><i class="ph ph-fingerprint"></i> ${g.username}</p><div class="mt-2 flex flex-wrap gap-1">${badgeUnit}</div>${badgeFace}</div><div class="flex gap-2"><button onclick="openModalUser('${g.id}')" class="p-2 bg-gray-50 border rounded shadow-sm hover:bg-gray-200 transition"><i class="ph ph-pencil-simple text-blue-600"></i></button><button onclick="deleteUser('${g.id}')" class="p-2 bg-red-50 border border-red-200 rounded shadow-sm hover:bg-red-100 transition"><i class="ph ph-trash text-red-600"></i></button></div></div>`; 
@@ -1551,12 +1588,12 @@
 
         // ================= FUNGSI MANAJEMEN KELAS & MAPEL =================
         function openModalKelas(id = null) { if(id) { const c = db.classes.find(x=>x.id===id); document.getElementById('kelas-id').value = c.id; document.getElementById('kelas-nama').value = c.name; document.getElementById('kelas-shift').value = c.shift || 'SD'; } else { document.getElementById('form-kelas').reset(); document.getElementById('kelas-id').value = ''; } showModal('modal-add-kelas'); }
-        function saveKelas(e) { e.preventDefault(); const id = document.getElementById('kelas-id').value, name = document.getElementById('kelas-nama').value, shift = document.getElementById('kelas-shift').value, p = { id: id || ('c_' + Date.now()), name, shift }; if (id) db.classes[db.classes.findIndex(c => c.id === id)] = p; else db.classes.push(p); saveDB(); pushToBackend('save_class', p); closeModal('modal-add-kelas'); renderAdminKelas(); populateJadwalFilters(); }
+        function saveKelas(e) { e.preventDefault(); const id = document.getElementById('kelas-id').value, name = document.getElementById('kelas-nama').value, shift = document.getElementById('kelas-shift').value, p = { id: id || generateId('c'), name, shift }; if (id) db.classes[db.classes.findIndex(c => c.id === id)] = p; else db.classes.push(p); saveDB(); pushToBackend('save_class', p); closeModal('modal-add-kelas'); renderAdminKelas(); populateJadwalFilters(); }
         function renderAdminKelas() { const l = document.getElementById('admin-kelas-list'); l.innerHTML = ''; db.classes.forEach(c => l.innerHTML += `<div class="flex justify-between items-center border-b py-2"><span class="text-sm font-semibold text-gray-700">${c.name} <span class="bg-gray-100 border border-gray-300 text-gray-600 font-bold text-[8px] px-1.5 py-0.5 rounded-full ml-1 uppercase tracking-widest">${c.shift||'SD'}</span></span><div class="flex gap-1"><button onclick="openModalKelas('${c.id}')" class="p-1 border rounded hover:bg-gray-50"><i class="ph ph-pencil-simple text-blue-600"></i></button><button onclick="deleteKelas('${c.id}')" class="p-1 border rounded hover:bg-red-50 text-red-500"><i class="ph ph-trash"></i></button></div></div>`); }
         function deleteKelas(id) { if (confirm("Yakin hapus? Segala jadwal yg berhubungan dengan kelas ini akan lenyap.")) { db.classes = db.classes.filter(c => c.id !== id); db.schedules = db.schedules.filter(s => s.classId !== id); saveDB(); pushToBackend('delete_class', { id }); renderAdminKelas(); renderAdminJadwal(); } } 
 
         function openModalMapel(id = null) { if(id) { const s = db.subjects.find(x=>x.id===id); document.getElementById('mapel-id').value = s.id; document.getElementById('mapel-nama').value = s.name; document.getElementById('mapel-shift').value = s.shift || 'SD'; } else { document.getElementById('form-mapel').reset(); document.getElementById('mapel-id').value = ''; } showModal('modal-add-mapel'); }
-        function saveMapel(e) { e.preventDefault(); const id = document.getElementById('mapel-id').value, name = document.getElementById('mapel-nama').value, shift = document.getElementById('mapel-shift').value, p = { id: id || ('s_' + Date.now()), name, shift }; if (id) db.subjects[db.subjects.findIndex(x => x.id === id)] = p; else db.subjects.push(p); saveDB(); pushToBackend('save_subject', p); closeModal('modal-add-mapel'); renderAdminMapel(); }
+        function saveMapel(e) { e.preventDefault(); const id = document.getElementById('mapel-id').value, name = document.getElementById('mapel-nama').value, shift = document.getElementById('mapel-shift').value, p = { id: id || generateId('s'), name, shift }; if (id) db.subjects[db.subjects.findIndex(x => x.id === id)] = p; else db.subjects.push(p); saveDB(); pushToBackend('save_subject', p); closeModal('modal-add-mapel'); renderAdminMapel(); }
         function renderAdminMapel() { const l = document.getElementById('admin-mapel-list'); l.innerHTML = ''; db.subjects.forEach(s => l.innerHTML += `<div class="flex justify-between items-center border-b py-2"><span class="text-sm font-semibold text-gray-700">${s.name} <span class="bg-gray-100 border border-gray-300 text-gray-600 font-bold text-[8px] px-1.5 py-0.5 rounded-full ml-1 uppercase tracking-widest">${s.shift||'SD'}</span></span><div class="flex gap-1"><button onclick="openModalMapel('${s.id}')" class="p-1 border rounded hover:bg-gray-50"><i class="ph ph-pencil-simple text-blue-600"></i></button><button onclick="deleteMapel('${s.id}')" class="p-1 border rounded hover:bg-red-50 text-red-500"><i class="ph ph-trash"></i></button></div></div>`); }
         function deleteMapel(id) { if (confirm("Yakin hapus mapel ini?")) { db.subjects = db.subjects.filter(s => s.id !== id); db.schedules = db.schedules.filter(s => s.subjectId !== id); saveDB(); pushToBackend('delete_subject', { id }); renderAdminMapel(); renderAdminJadwal(); } }
 
@@ -1623,7 +1660,7 @@
                             const realClash = isClashing(t.id, day, slotStartStr, slotEndStr);
                             
                             if (!tempClash && !realClash) { 
-                                newSchedules.push({ id: 'sch_' + Date.now() + Math.floor(Math.random()*1000), classId: classId, teacherId: t.id, subjectId: subj.id, day: day, startTime: slotStartStr, endTime: slotEndStr, desc: "AI Generate" }); 
+                                newSchedules.push({ id: generateId('sch'), classId: classId, teacherId: t.id, subjectId: subj.id, day: day, startTime: slotStartStr, endTime: slotEndStr, desc: "AI Generate" }); 
                                 assigned = true; break; 
                             }
                         }
@@ -1638,13 +1675,12 @@
         // ================= FUNGSI MANAJEMEN ROSTER MANUAL =================
         function populateJadwalFilters() { const sel = document.getElementById('roster-class-filter'); sel.innerHTML = '<option value="">-- Silakan Pilih Kelas --</option>'; db.classes.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.shift||'SD'})</option>`); renderAdminJadwal(); }
         
-        // Pemicu buka modal jadwal manual dari tombol tabel (Fitur Baru)
         function openModalJadwalManual(hari) {
             document.getElementById('form-jadwal').reset();
             document.getElementById('jadwal-id').value = '';
             
             const selHari = document.getElementById('jadwal-hari');
-            if(hari) selHari.value = hari; // Set default dropdown ke hari yang di-klik
+            if(hari) selHari.value = hari; 
             
             const classId = document.getElementById('roster-class-filter').value;
             document.getElementById('jadwal-kelas-display').value = getClassName(classId);
@@ -1652,7 +1688,6 @@
             showModal('modal-add-jadwal');
         }
 
-        // Fungsi Kalkulasi Jam Otomatis di Modal Jadwal (Fitur Baru)
         function autoCalcTime(mins) {
             const startStr = document.getElementById('jadwal-mulai').value;
             if (!startStr) return alert('Isi Jam Mulai terlebih dahulu');
@@ -1685,7 +1720,7 @@
         
         function saveJadwal(e) { e.preventDefault(); const id = document.getElementById('jadwal-id').value, classId = document.getElementById('roster-class-filter').value; if (!classId) return; const data = { classId, teacherId: document.getElementById('jadwal-guru').value, subjectId: document.getElementById('jadwal-mapel').value, day: document.getElementById('jadwal-hari').value, startTime: document.getElementById('jadwal-mulai').value, endTime: document.getElementById('jadwal-selesai').value, desc: document.getElementById('jadwal-ket').value }; 
         const clash = isClashing(data.teacherId, data.day, data.startTime, data.endTime, id); if (clash) return alert(`BENTROK DETECTED: Guru tsb telah ditugaskan mengajar di ${getClassName(clash.classId)} pada jam ${clash.startTime}-${clash.endTime}`); 
-        let payload = { id: id || ('sch_' + Date.now()), ...data }; if (id) db.schedules[db.schedules.findIndex(s => s.id === id)] = payload; else db.schedules.push(payload); saveDB(); pushToBackend('save_jadwal', payload); closeModal('modal-add-jadwal'); renderAdminJadwal(); }
+        let payload = { id: id || generateId('sch'), ...data }; if (id) db.schedules[db.schedules.findIndex(s => s.id === id)] = payload; else db.schedules.push(payload); saveDB(); pushToBackend('save_jadwal', payload); closeModal('modal-add-jadwal'); renderAdminJadwal(); }
         function deleteJadwal(id) { if (confirm("Hapus Slot ini?")) { db.schedules = db.schedules.filter(s => s.id !== id); saveDB(); pushToBackend('delete_jadwal', { id }); renderAdminJadwal(); } }
 
         // ================= FUNGSI MANAJEMEN PIKET =================
@@ -1696,7 +1731,7 @@
             pikets.forEach(p => { listEl.innerHTML += `<div class="bg-orange-50 border border-orange-200 p-3 rounded-lg flex justify-between items-center mb-2 shadow-sm"><div><p class="font-bold text-orange-900 text-sm flex items-center gap-1"><i class="ph ph-shield-check text-lg"></i> ${getTeacherName(p.userId)}</p></div><button onclick="deletePiket('${p.id}')" class="bg-white text-red-500 p-2 rounded-lg border border-red-200 shadow-sm hover:bg-red-50"><i class="ph ph-trash"></i></button></div>`; });
         }
         function openModalPiket() { document.getElementById('piket-hari-display').value = document.getElementById('filter-piket-hari').value; document.getElementById('piket-shift-display').value = document.getElementById('filter-piket-shift').value; const selGuru = document.getElementById('piket-guru'); selGuru.innerHTML = ''; db.users.filter(u => u.role === 'guru').forEach(g => selGuru.innerHTML += `<option value="${g.id}">${g.name}</option>`); showModal('modal-add-piket'); }
-        function savePiket(e) { e.preventDefault(); const payload = { id: 'pkt_' + Date.now(), userId: document.getElementById('piket-guru').value, day: document.getElementById('filter-piket-hari').value, shift: document.getElementById('filter-piket-shift').value }; if(db.pickets.find(p => p.userId === payload.userId && p.day === payload.day && p.shift === payload.shift)) return alert("Tolak: Guru ini sudah terdaftar sebagai piket di hari yang sama!"); db.pickets.push(payload); saveDB(); pushToBackend('save_piket', payload); closeModal('modal-add-piket'); renderAdminPiket(); }
+        function savePiket(e) { e.preventDefault(); const payload = { id: generateId('pkt'), userId: document.getElementById('piket-guru').value, day: document.getElementById('filter-piket-hari').value, shift: document.getElementById('filter-piket-shift').value }; if(db.pickets.find(p => p.userId === payload.userId && p.day === payload.day && p.shift === payload.shift)) return alert("Tolak: Guru ini sudah terdaftar sebagai piket di hari yang sama!"); db.pickets.push(payload); saveDB(); pushToBackend('save_piket', payload); closeModal('modal-add-piket'); renderAdminPiket(); }
         function deletePiket(id) { if(confirm("Cabut piket?")) { db.pickets = db.pickets.filter(p=>p.id!==id); saveDB(); pushToBackend('delete_piket', {id}); renderAdminPiket(); } }
         function autoGeneratePiket() {
             const hari = document.getElementById('filter-piket-hari').value, shift = document.getElementById('filter-piket-shift').value; let guruHadir = [];
@@ -1706,7 +1741,7 @@
             const guruTerpilih = guruHadir[Math.floor(Math.random() * guruHadir.length)]; 
             if(db.pickets.find(p => p.userId === guruTerpilih && p.day === hari && p.shift === shift)) return showToast("Gacha ulang, nama ini sudah terpilih.");
             
-            const payload = { id: 'pkt_' + Date.now(), userId: guruTerpilih, day: hari, shift: shift }; db.pickets.push(payload); saveDB(); pushToBackend('save_piket', payload); renderAdminPiket(); showToast("AI mengundi 1 Piket.");
+            const payload = { id: generateId('pkt'), userId: guruTerpilih, day: hari, shift: shift }; db.pickets.push(payload); saveDB(); pushToBackend('save_piket', payload); renderAdminPiket(); showToast("AI mengundi 1 Piket.");
         }
 
         // ================= FUNGSI KALKULASI TARGET KEHADIRAN AKTUAL (SIAPA YANG HARUS DATANG HARI INI) =================
@@ -1718,41 +1753,11 @@
             let targetSD = [], targetTPQ = [], targetTahfiz = [];
 
             db.users.filter(u => u.role === 'guru' || u.role === 'tendik').forEach(pegawai => {
-                let hasSD = false, hasTPQ = false, hasTahfiz = false;
+                // PERBAIKAN REQ 1: Logika lebih bersih, murni dari Unit Penugasan
                 const myUnits = pegawai.unit ? pegawai.unit.split(',') : [];
-
-                if (pegawai.role === 'tendik') {
-                    if(myUnits.includes('SD')) hasSD = true;
-                    if(myUnits.includes('TPQ')) hasTPQ = true;
-                    if(myUnits.includes('Tahfiz')) hasTahfiz = true;
-                } else {
-                    const jadwalHariIni = db.schedules.filter(s => s.teacherId === pegawai.id && s.day === todayName);
-                    jadwalHariIni.forEach(s => {
-                        const c = db.classes.find(x => x.id === s.classId);
-                        if(c) {
-                            if(c.shift === 'SD' || !c.shift) hasSD = true;
-                            else if(c.shift === 'TPQ') hasTPQ = true;
-                            else if(c.shift === 'Tahfiz') hasTahfiz = true;
-                        }
-                    });
-
-                    const piketHariIni = db.pickets.filter(p => p.userId === pegawai.id && p.day === todayName);
-                    piketHariIni.forEach(p => {
-                        if(p.shift === 'SD') hasSD = true;
-                        else if(p.shift === 'TPQ') hasTPQ = true;
-                        else if(p.shift === 'Tahfiz') hasTahfiz = true;
-                    });
-
-                    // PERBAIKAN: Analisis berdasarkan setingan admin
-                    if (!hasSD && !hasTPQ && !hasTahfiz && db.settings.wajib_absen_kosong === 'true') {
-                        if (db.settings.mode_absen_kosong === 'pagi') { hasSD = true; } 
-                        else {
-                            if(myUnits.includes('SD')) hasSD = true;
-                            if(myUnits.includes('TPQ')) hasTPQ = true;
-                            if(myUnits.includes('Tahfiz')) hasTahfiz = true;
-                        }
-                    }
-                }
+                let hasSD = myUnits.includes('SD');
+                let hasTPQ = myUnits.includes('TPQ');
+                let hasTahfiz = myUnits.includes('Tahfiz');
 
                 const objIzin = db.izin.find(i => { if (i.userId !== pegawai.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
                 const strIzin = objIzin ? ' <span class="bg-blue-100 border border-blue-300 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1 shadow-sm">IZIN CUTI BERLANGSUNG</span>' : '';
@@ -1783,28 +1788,151 @@
             if (izins.length === 0) { listEl.innerHTML = '<p class="text-xs text-gray-500 italic p-6 text-center border rounded-xl border-dashed">Meja Bebas. Tidak ada arsip surat menyurat izin/cuti yang terekam.</p>'; return; } 
             izins.forEach(iz => { 
                 let badge = iz.status === 'Pending' ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 border border-yellow-300 rounded-full text-[10px] font-bold shadow-sm animate-pulse">Menunggu Proses (Baru)</span>` : (iz.status === 'Disetujui' ? `<span class="bg-green-100 text-green-800 px-2 py-0.5 border border-green-300 rounded-full text-[10px] font-bold shadow-sm">Surat Sah (Disetujui)</span>` : `<span class="bg-red-100 text-red-800 px-2 py-0.5 border border-red-300 rounded-full text-[10px] font-bold shadow-sm">Surat Ditolak/Batal</span>`); 
-                let subText = iz.substituteId ? `<p class="text-[10px] text-blue-800 bg-blue-50 border border-blue-200 px-2 py-1.5 rounded inline-block mt-2 font-medium shadow-sm flex items-center gap-1">Inval: <i class="ph ph-arrows-merge text-sm"></i> <b>${getTeacherName(iz.substituteId)}</b></p>` : ''; 
+                
+                // Parse String Inval
+                let subText = '';
+                if (iz.substituteId && iz.status === 'Disetujui') {
+                    let subObj = parseSubstituteJson(iz.substituteId);
+                    // Rangkum jika ada banyak pengganti
+                    let count = 0;
+                    for(let d in subObj) { for(let s in subObj[d]) { if(subObj[d][s]) count++; } }
+                    if(count > 0) subText = `<p class="text-[10px] text-blue-800 bg-blue-50 border border-blue-200 px-2 py-1.5 rounded inline-block mt-2 font-medium shadow-sm flex items-center gap-1"><i class="ph ph-arrows-merge text-sm"></i> Ada <b>${count} Sesi</b> digantikan oleh Inval</p>`;
+                }
+
                 let infoWaktu = iz.type === 'Full' ? `Periode Tanggal: <b>${iz.startDate}</b> s/d <b>${iz.endDate}</b>` : `Izin Jam Tgl <b>${iz.startDate}</b> | Pukul <b>${iz.startTime}</b> - <b>${iz.endTime||'Belum/Tidak Tentu'}</b>`;
                 
                 listEl.innerHTML += `<div class="bg-white border border-gray-200 p-4 rounded-xl mb-3 shadow-sm relative overflow-hidden transition hover:shadow-md"><div class="absolute w-1.5 bg-black left-0 top-0 bottom-0"></div><div class="flex justify-between items-start mb-2"><div class="pl-2"><p class="font-bold text-sm text-gray-800">${getTeacherName(iz.userId)}</p><p class="text-[10px] text-gray-500 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded inline-block mt-1 shadow-inner">${infoWaktu}</p></div>${badge}</div><p class="text-xs bg-gray-50 p-3 rounded-lg border text-gray-700 italic ml-2 shadow-inner"><i class="ph ph-quotes text-gray-400"></i> ${iz.reason}</p><div class="ml-2">${subText}</div> ${iz.status === 'Pending' ? `<button onclick="bukaProsesIzin('${iz.id}')" class="w-full mt-3 bg-black text-white text-xs py-2.5 rounded-lg font-bold shadow-md flex justify-center items-center gap-1 hover:bg-gray-800 transition"><i class="ph ph-stamp text-lg"></i> Ambil Tindakan</button>` : `<button onclick="hapusIzin('${iz.id}')" class="w-full mt-3 bg-white text-red-600 border border-red-200 text-xs py-2 rounded-lg font-medium shadow-sm flex justify-center items-center gap-1 hover:bg-red-50 transition"><i class="ph ph-trash text-lg"></i> Hapus Berkas Fisik</button>`}</div>`; 
             }); 
         }
 
+        // FUNGSI MEMBANGUN DROPDOWN INVAL SECARA DINAMIS
         function bukaProsesIzin(id) { 
-            const iz = db.izin.find(i => i.id === id); document.getElementById('proses-izin-id').value = id; document.getElementById('pi-nama').innerText = getTeacherName(iz.userId); 
+            const iz = db.izin.find(i => i.id === id); 
+            document.getElementById('proses-izin-id').value = id; 
+            document.getElementById('pi-nama').innerText = getTeacherName(iz.userId); 
             if(iz.type === 'Full') document.getElementById('pi-waktu').innerText = `Izin Multi-Hari: ${iz.startDate} to ${iz.endDate}`; else document.getElementById('pi-waktu').innerText = `Izin Jam: ${iz.startDate} (${iz.startTime} - ${iz.endTime||'X'})`;
             document.getElementById('pi-alasan').innerText = `Alasan: "${iz.reason}"`; 
             
-            const selSub = document.getElementById('pi-pengganti'); selSub.innerHTML = '<option value="">(Kosongkan jika tak perlu inval)</option>'; 
             const org = db.users.find(u => u.id === iz.userId);
-            
-            if (org && org.role === 'tendik') document.getElementById('container-inval').classList.add('hidden'); 
-            else { document.getElementById('container-inval').classList.remove('hidden'); db.users.filter(u => u.role === 'guru' && u.id !== iz.userId).forEach(g => selSub.innerHTML += `<option value="${g.id}">Opsi Inval: ${g.name}</option>`); }
-            showModal('modal-proses-izin'); toggleInvalSelect(); 
+            const containerInval = document.getElementById('container-inval');
+            const listDynamic = document.getElementById('dynamic-inval-list');
+            listDynamic.innerHTML = '';
+
+            // Jika yang izin adalah tendik, tak perlu Inval
+            if (org && org.role === 'tendik') {
+                containerInval.classList.add('hidden'); 
+            } else { 
+                containerInval.classList.remove('hidden'); 
+                
+                // Temukan rentang tanggal izin
+                const startParts = iz.startDate.split('-');
+                const endParts = (iz.type === 'Full') ? iz.endDate.split('-') : iz.startDate.split('-');
+                let currentDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+                const endDateObj = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+                
+                let datesArray = [];
+                while (currentDate <= endDateObj) {
+                    datesArray.push(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
+                // Bangun dropdown per tanggal & per shift
+                let invalHTML = '';
+                const availableGurus = db.users.filter(u => u.role === 'guru' && u.id !== iz.userId);
+                const oldInvalData = parseSubstituteJson(iz.substituteId);
+
+                let hasAnySlot = false;
+
+                datesArray.forEach(dStr => {
+                    const dObj = new Date(dStr.split('-')[0], dStr.split('-')[1] - 1, dStr.split('-')[2]);
+                    const namaHari = HARI_ARRAY[dObj.getDay()];
+                    
+                    // Cek shift apa saja si orang ini punya jadwal/piket di hari ini
+                    let requiredShifts = new Set();
+                    db.schedules.filter(s => s.teacherId === iz.userId && s.day === namaHari).forEach(s => {
+                        const c = db.classes.find(x => x.id === s.classId);
+                        if(c) requiredShifts.add(c.shift || 'SD');
+                    });
+                    db.pickets.filter(p => p.userId === iz.userId && p.day === namaHari).forEach(p => {
+                        requiredShifts.add(p.shift);
+                    });
+
+                    if(requiredShifts.size > 0) {
+                        hasAnySlot = true;
+                        invalHTML += `<div class="bg-white border border-yellow-200 p-2 rounded shadow-inner"><p class="text-[10px] font-bold text-gray-700 mb-1 border-b pb-1"><i class="ph ph-calendar-blank"></i> ${namaHari}, ${dStr}</p>`;
+                        
+                        requiredShifts.forEach(shift => {
+                            let oldSelected = '';
+                            if(oldInvalData[dStr] && oldInvalData[dStr][shift]) oldSelected = oldInvalData[dStr][shift];
+
+                            let opts = `<option value="">-- Beban Kosong (Tidak ditunjuk) --</option>`;
+                            availableGurus.forEach(g => {
+                                opts += `<option value="${g.id}" ${g.id === oldSelected ? 'selected' : ''}>${g.name}</option>`;
+                            });
+
+                            invalHTML += `
+                                <div class="flex items-center gap-2 mb-1.5 last:mb-0">
+                                    <span class="w-12 text-[10px] font-bold text-blue-700 uppercase">${shift}</span>
+                                    <select class="dyn-inval-sel w-full border rounded p-1 text-xs bg-gray-50 outline-none" data-date="${dStr}" data-shift="${shift}">
+                                        ${opts}
+                                    </select>
+                                </div>
+                            `;
+                        });
+                        invalHTML += `</div>`;
+                    }
+                });
+
+                if(!hasAnySlot) invalHTML = `<p class="text-xs text-gray-500 italic">Sistem tidak mendeteksi adanya jam mengajar / jadwal piket bagi guru ini pada tanggal tersebut. Inval tidak diperlukan.</p>`;
+                
+                listDynamic.innerHTML = invalHTML;
+            }
+
+            showModal('modal-proses-izin'); 
+            toggleInvalSelect(); 
         }
 
-        function toggleInvalSelect() { const izId = document.getElementById('proses-izin-id').value; const iz = db.izin.find(i => i.id === izId); const user = db.users.find(u => u.id === iz.userId); document.getElementById('container-inval').style.opacity = (document.getElementById('pi-status').value === 'Disetujui' && user && user.role === 'guru') ? '1' : '0.4'; document.getElementById('pi-pengganti').disabled = !(document.getElementById('pi-status').value === 'Disetujui'); }
-        function simpanProsesIzin(e) { e.preventDefault(); const id = document.getElementById('proses-izin-id').value, status = document.getElementById('pi-status').value, subId = document.getElementById('pi-pengganti').value, idx = db.izin.findIndex(i => i.id === id); if (idx > -1) { db.izin[idx].status = status; if (status === 'Disetujui') db.izin[idx].substituteId = subId; saveDB(); pushToBackend('save_izin', db.izin[idx]); } closeModal('modal-proses-izin'); renderAdminIzin(); switchAdminTab('dashboard'); showToast("Surat Keputusan Telah Dicap."); }
+        function toggleInvalSelect() { 
+            const izId = document.getElementById('proses-izin-id').value; 
+            const iz = db.izin.find(i => i.id === izId); 
+            const user = db.users.find(u => u.id === iz.userId); 
+            
+            const isApproved = document.getElementById('pi-status').value === 'Disetujui';
+            const cont = document.getElementById('container-inval');
+            
+            cont.style.opacity = (isApproved && user && user.role === 'guru') ? '1' : '0.4'; 
+            document.querySelectorAll('.dyn-inval-sel').forEach(el => el.disabled = !isApproved);
+        }
+
+        function simpanProsesIzin(e) { 
+            e.preventDefault(); 
+            const id = document.getElementById('proses-izin-id').value;
+            const status = document.getElementById('pi-status').value;
+            const idx = db.izin.findIndex(i => i.id === id); 
+            
+            if (idx > -1) { 
+                db.izin[idx].status = status; 
+                
+                // Bangun Objek JSON untuk Inval
+                if (status === 'Disetujui') { 
+                    let invalResult = {};
+                    document.querySelectorAll('.dyn-inval-sel').forEach(sel => {
+                        let d = sel.getAttribute('data-date');
+                        let s = sel.getAttribute('data-shift');
+                        let val = sel.value;
+                        
+                        if(!invalResult[d]) invalResult[d] = {};
+                        invalResult[d][s] = val; // Set the value (bisa string kosong kalau tidak milih)
+                    });
+                    
+                    db.izin[idx].substituteId = JSON.stringify(invalResult);
+                }
+                saveDB(); 
+                pushToBackend('save_izin', db.izin[idx]); 
+            } 
+            closeModal('modal-proses-izin'); renderAdminIzin(); switchAdminTab('dashboard'); showToast("Surat Keputusan Telah Dicap."); 
+        }
+        
         function hapusIzin(id) { if(confirm("Musnahkan lembar arsip ini?")) { db.izin = db.izin.filter(i => i.id !== id); saveDB(); pushToBackend('delete_izin', { id }); renderAdminIzin(); } }
 
         // ================= FUNGSI EKSPOR LAPORAN =================
@@ -1815,12 +1943,15 @@
             const start = document.getElementById('report-date-start').value, end = document.getElementById('report-date-end').value, roleId = document.getElementById('report-role-filter').value, userId = document.getElementById('report-user-filter').value, unitId = document.getElementById('report-unit-filter').value;
             if (!start || !end) return alert("Pilih kotak tanggal!"); if (start > end) return alert("Hukum fisika dilanggar: Tanggal selesai melampaui tanggal mulai!");
             
+            // FITUR BARU: Pemutihan Laporan (Cetak Bersih)
+            const isPemutihan = document.getElementById('report-pemutihan').checked;
+
             document.getElementById('print-area').classList.remove('hidden'); document.getElementById('print-periode').innerText = `Periode Rekap: ${start} s/d ${end}`;
             const tbody = document.getElementById('report-table-body'); tbody.innerHTML = '';
             
             const startParts = start.split('-'), endParts = end.split('-'); let currentDate = new Date(startParts[0], startParts[1] - 1, startParts[2]); const endDateObj = new Date(endParts[0], endParts[1] - 1, endParts[2]);
             let datesArray = []; while (currentDate <= endDateObj) { datesArray.push(`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`); currentDate.setDate(currentDate.getDate() + 1); } 
-            datesArray.sort((a, b) => b.localeCompare(a)); // Urutkan Descending
+            datesArray.sort((a, b) => b.localeCompare(a)); 
             
             let targetUsers = db.users; if (roleId !== 'all') targetUsers = targetUsers.filter(u => u.role === roleId); if (userId !== 'all') targetUsers = targetUsers.filter(u => u.id === userId);
             let totalRows = 0; const hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -1830,41 +1961,44 @@
                 targetUsers.forEach(karyawan => {
                     const izinToday = db.izin.find(i => { if (i.userId !== karyawan.id || i.status !== 'Disetujui') return false; if (i.type === 'Full') return (dateStr >= i.startDate && dateStr <= i.endDate); return (i.startDate === dateStr); });
 
-                    // PERBAIKAN BUG KATEGORI LAPORAN:
-                    // Jika admin memilih 1 Unit spesifik, kita pastikan hanya Unit tersebut yang diproses di iterasi ini
                     let targetUnits = ['SD', 'TPQ', 'Tahfiz'];
-                    if (unitId !== 'all') {
-                        targetUnits = [unitId]; 
-                    }
+                    if (unitId !== 'all') { targetUnits = [unitId]; }
 
                     targetUnits.forEach(shift => {
-                        let hasSched = false, isPiket = false, isWajibTarget = false;
                         const myUnits = karyawan.unit ? karyawan.unit.split(',') : [];
                         let isMyUnit = myUnits.includes(shift);
 
-                        if (karyawan.role === 'tendik') {
-                            if (isMyUnit) isWajibTarget = true; 
-                        } else {
-                            hasSched = db.schedules.some(s => s.teacherId === karyawan.id && s.day === namaHari && (db.classes.find(c=>c.id===s.classId)?.shift||'SD') === shift);
-                            isPiket = db.pickets.find(p => p.userId === karyawan.id && p.day === namaHari && p.shift === shift) != null;
-                            if(!hasSched && !isPiket && db.settings.wajib_absen_kosong === 'true') {
-                                if(db.settings.mode_absen_kosong === 'pagi' && shift === 'SD') isWajibTarget = true;
-                                else if (isMyUnit) isWajibTarget = true;
-                            }
-                        }
+                        // REQ 1: Jika ini profil unit dia, maka otomatis dia ditarget (wajib/bisa absen)
+                        let isWajibTarget = isMyUnit;
 
-                        const r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === shift);
+                        let r = db.attendance.find(a => a.userId === karyawan.id && a.date === dateStr && a.shift === shift);
                         
-                        // Perbaikan khusus: Jangan mencetak guru izin di kategori unit yg bukan penugasan/piket/roster-nya
-                        let shiftRelevantForLeave = isMyUnit || hasSched || isPiket;
-                        let effectiveIzin = izinToday && shiftRelevantForLeave;
+                        let effectiveIzin = izinToday && isWajibTarget;
 
-                        if (r || effectiveIzin || hasSched || isPiket || isWajibTarget) {
+                        if (r || effectiveIzin || isWajibTarget) {
                             let roleLbl = karyawan.role === 'tendik' ? `Tendik (${karyawan.jabatan||'-'}) - ${shift}` : `Guru Pendidik - ${shift}`;
-                            let infoRoster = (isPiket ? '<b>[PIKET]</b> ' : '') + (isWajibTarget && !hasSched && !isPiket ? '<b>[Wajib Apel]</b>' : '');
-                            
-                            if (!hasSched && !isPiket && !isWajibTarget && r) {
-                                infoRoster = '<b>[Absen Opsional]</b>';
+                            let infoRoster = '';
+
+                            // PROSES PEMUTIHAN LAPORAN
+                            if (isPemutihan) {
+                                // Jangan sentuh cuti/izin yang sah
+                                if (!effectiveIzin) {
+                                    // Jika Alfa
+                                    if (!r && isWajibTarget) {
+                                        r = {
+                                            timeIn: shift === 'SD' ? '07:15' : (shift === 'TPQ' ? '14:15' : '13:15'),
+                                            timeOut: shift === 'SD' ? '12:15' : (shift === 'TPQ' ? '17:15' : '14:45'),
+                                            disiplin: 'Tepat Waktu',
+                                            location: null
+                                        };
+                                        infoRoster = '<b>[Oto-Koreksi]</b>';
+                                    } 
+                                    // Jika Ada Record tapi Telat / Bolos Pulang
+                                    else if (r) {
+                                        r.disiplin = 'Tepat Waktu';
+                                        if(!r.timeOut) r.timeOut = shift === 'SD' ? '12:15' : (shift === 'TPQ' ? '17:15' : '14:45');
+                                    }
+                                }
                             }
 
                             cetakBarisLaporan(tbody, dateStr, karyawan.name, roleLbl, r, effectiveIzin, infoRoster); totalRows++;
@@ -1903,11 +2037,6 @@
             const cont = document.getElementById('daily-times-container'); cont.innerHTML = '';
             let daily = {}; try { daily = JSON.parse(db.settings.daily_times || '{}'); } catch(e){} 
             
-            document.getElementById('set-wajib-absen').checked = db.settings.wajib_absen_kosong === 'true';
-            document.getElementById('set-mode-absen').value = db.settings.mode_absen_kosong || 'shift';
-            document.getElementById('set-mode-absen').disabled = !(db.settings.wajib_absen_kosong === 'true');
-            document.getElementById('container-mode-absen').style.opacity = (db.settings.wajib_absen_kosong === 'true') ? '1' : '0.5';
-
             document.getElementById('set-strict-window').checked = db.settings.strict_absen_window === 'true';
 
             ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
@@ -1958,8 +2087,6 @@
                 };
             });
             db.settings.daily_times = JSON.stringify(daily);
-            db.settings.wajib_absen_kosong = document.getElementById('set-wajib-absen').checked ? 'true' : 'false';
-            db.settings.mode_absen_kosong = document.getElementById('set-mode-absen').value;
             db.settings.strict_absen_window = document.getElementById('set-strict-window').checked ? 'true' : 'false';
             
             ['SD', 'TPQ', 'Tahfiz'].forEach(shift => {
